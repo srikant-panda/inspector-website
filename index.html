@@ -1,0 +1,813 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inspector — Modular Node.js Diagnostics Suite</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800;900&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="cursor"></div>
+
+<!-- ============ STICKY NAV ============ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#overview" class="nav-brand" data-cursor-hover>
+      <span class="nav-brand-dot"></span>
+      INSPECTOR
+    </a>
+    <ul class="nav-links">
+      <li><a href="#overview" data-cursor-hover>Overview</a></li>
+      <li><a href="#architecture" data-cursor-hover>Architecture</a></li>
+      <li><a href="#codeflow" data-cursor-hover>Code Flow</a></li>
+      <li><a href="#streams" data-cursor-hover>Streams</a></li>
+      <li><a href="#features" data-cursor-hover>Features</a></li>
+      <li><a href="#errors" data-cursor-hover>Error Handling</a></li>
+      <li><a href="#codebase" data-cursor-hover>Codebase</a></li>
+      <li><a href="#docs" data-cursor-hover>Documentation</a></li>
+    </ul>
+    <a href="https://github.com/srikant-panda/inspector" target="_blank" rel="noopener" class="nav-cta" data-cursor-hover>View Source ↗</a>
+  </div>
+</nav>
+
+<!-- ============ HERO / OVERVIEW ============ -->
+<section id="overview" class="hero">
+  <div class="hero-grid">
+    <div class="hero-left">
+      <div class="hero-meta">
+        <span class="meta-tag">v1.0 · NODE.JS CLI</span>
+        <span class="meta-tag">ZERO-DEPENDENCY</span>
+        <span class="meta-tag">CROSS-PLATFORM</span>
+      </div>
+      <h1 id="hero-title">INSPECTOR</h1>
+      <p class="hero-subtitle">A modular, zero-dependency diagnostics and file management suite built for Node.js.</p>
+      <div class="hero-quickstart">
+        <span class="qs-label">// QUICKSTART</span>
+        <div class="qs-line"><span class="prompt">$</span> npm start</div>
+        <div class="qs-line"><span class="prompt">$</span> npm run info</div>
+        <div class="qs-line"><span class="prompt">$</span> npm run info:json</div>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="terminal" id="terminal">
+        <div class="terminal-head">
+          <span class="term-dot"></span>
+          <span class="term-dot"></span>
+          <span class="term-dot"></span>
+          <span class="term-title">inspector — zsh</span>
+          <span class="term-cycle" id="term-cycle">01/04</span>
+        </div>
+        <div class="terminal-body" id="terminal-body"></div>
+      </div>
+    </div>
+  </div>
+  <div class="hero-scroll-hint">
+    <span>SCROLL TO EXPLORE</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- ============ MANIFESTO ============ -->
+<section class="manifesto-section" id="manifesto-container">
+  <div class="container">
+    <div class="section-label">[01] — OVERVIEW</div>
+    <p id="manifesto-text" class="manifesto">Inspector is a modular, zero-dependency diagnostics and file management suite built for Node.js. Developed as a dev-utility package, it aggregates low-level system metrics — OS, CPU, memory, network, battery, storage — and routes them into terminal views, JSON data payloads, and styled dark-mode HTML reports. It includes an interactive file manager supporting cross-platform command scripts and folder tree-browsing.</p>
+  </div>
+</section>
+
+<!-- ============ STATISTICS ============ -->
+<section class="stats-section">
+  <div class="container-wide">
+    <div class="section-label">[02] — BY THE NUMBERS</div>
+    <div class="stats-grid">
+      <div class="stat-item reveal">
+        <div class="stat-num"><span class="counter" data-target="6">0</span></div>
+        <div class="stat-label">Core Modules</div>
+        <div class="stat-sub">index · cli · sysinfo · fileOps · htmlExport · filemanager</div>
+      </div>
+      <div class="stat-item reveal">
+        <div class="stat-num"><span class="counter" data-target="3">0</span></div>
+        <div class="stat-label">Supported Platforms</div>
+        <div class="stat-sub">Windows · Linux · macOS</div>
+      </div>
+      <div class="stat-item reveal">
+        <div class="stat-num"><span class="counter" data-target="3">0</span></div>
+        <div class="stat-label">CLI Shortcuts</div>
+        <div class="stat-sub">npm start · npm run info · npm run info:json</div>
+      </div>
+      <div class="stat-item reveal">
+        <div class="stat-num"><span class="counter" data-target="4">0</span></div>
+        <div class="stat-label">Feature Categories</div>
+        <div class="stat-sub">System Info · File Manager · Safety · Export</div>
+      </div>
+      <div class="stat-item reveal">
+        <div class="stat-num"><span class="counter" data-target="9">0</span></div>
+        <div class="stat-label">Failure Scenarios</div>
+        <div class="stat-sub">Documented in error-handling matrix</div>
+      </div>
+      <div class="stat-item reveal">
+        <div class="stat-num"><span class="counter" data-target="5">0</span></div>
+        <div class="stat-label">File Operations</div>
+        <div class="stat-sub">create · read · update · delete · list</div>
+      </div>
+      <div class="stat-item reveal">
+        <div class="stat-num"><span class="counter" data-target="5">0</span></div>
+        <div class="stat-label">Documentation Files</div>
+        <div class="stat-sub">Architecture · Code Flow · Features · Errors · Codebase</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ARCHITECTURE ============ -->
+<section id="architecture" class="architecture-section">
+  <div class="container-wide">
+    <div class="section-label">[03] — SYSTEM ARCHITECTURE</div>
+    <div class="sticky-pair">
+      <div class="sticky-left">
+        <h2 class="section-headline">Two primary<br>components,<br>one orchestrator.</h2>
+        <p class="section-lede">Inspector is split into <span class="mono-inline">sysinspector/</span> — containing the core logic for system diagnostics, interactive CLI menus, configuration white-listing, and report exporting — and <span class="mono-inline">filemanager/</span> — a standalone file management module providing Unix commands and Windows command-line aliases. Orchestration is handled by <span class="mono-inline">sysinspector/src/cli.js</span>.</p>
+        <div class="arch-pattern">
+          <div class="pattern-label">GATHER → DISPLAY → EXPORT PATTERN</div>
+          <div class="pattern-flow">
+            <div class="pattern-node"><span class="pn-num">01</span><span class="pn-name">Gather</span><span class="pn-file">sysinfo.js</span></div>
+            <div class="pattern-arrow">→</div>
+            <div class="pattern-node"><span class="pn-num">02</span><span class="pn-name">Display</span><span class="pn-file">cli.js layout</span></div>
+            <div class="pattern-arrow">→</div>
+            <div class="pattern-node"><span class="pn-num">03</span><span class="pn-name">Export</span><span class="pn-file">JSON & htmlExport</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="sticky-right">
+        <div class="carousel-hint">DRAG · SCROLL · EXPLORE MODULES →</div>
+        <div class="arch-carousel" id="arch-carousel">
+          <div class="arch-card">
+            <div class="arch-card-num">M01</div>
+            <div class="arch-card-file">sysinspector/src/index.js</div>
+            <h3 class="arch-card-title">Entry Point</h3>
+            <p class="arch-card-purpose">Command-line parser and router. Evaluates arguments like <span class="mono-inline">--json</span> and <span class="mono-inline">--dir</span>, runs one-shot system reports, and starts the menu loop.</p>
+            <div class="arch-card-meta">
+              <div class="meta-row"><span>Role</span><span>Entry Point</span></div>
+              <div class="meta-row"><span>Depends on</span><span>cli.js</span></div>
+              <div class="meta-row"><span>Interactions</span><span>Argument routing, one-shot reports, menu handoff</span></div>
+            </div>
+          </div>
+          <div class="arch-card">
+            <div class="arch-card-num">M02</div>
+            <div class="arch-card-file">sysinspector/src/cli.js</div>
+            <h3 class="arch-card-title">Orchestrator</h3>
+            <p class="arch-card-purpose">Interactive menu interface. Captures arrow-key inputs, queries real-time diagnostics, runs the Scrollable Output viewer, and links with the exporting and file manager subsystems.</p>
+            <div class="arch-card-meta">
+              <div class="meta-row"><span>Role</span><span>Orchestrator</span></div>
+              <div class="meta-row"><span>Depends on</span><span>sysinfo.js · htmlExport.js · fileOps.js</span></div>
+              <div class="meta-row"><span>Interactions</span><span>Menu render, keypress loop, scrollable output</span></div>
+            </div>
+          </div>
+          <div class="arch-card">
+            <div class="arch-card-num">M03</div>
+            <div class="arch-card-file">sysinspector/src/sysinfo.js</div>
+            <h3 class="arch-card-title">System Reporter</h3>
+            <p class="arch-card-purpose">Runs processes dynamically under baselined process timeouts to gather platform properties. Implements allow-list filter <span class="mono-inline">SAFE_ENV_KEYS</span> and the <span class="mono-inline">looksSecret()</span> pattern redaction.</p>
+            <div class="arch-card-meta">
+              <div class="meta-row"><span>Role</span><span>Data Gatherer</span></div>
+              <div class="meta-row"><span>Depends on</span><span>os · child_process</span></div>
+              <div class="meta-row"><span>Interactions</span><span>safe() wrappers, env redaction, timeout guards</span></div>
+            </div>
+          </div>
+          <div class="arch-card">
+            <div class="arch-card-num">M04</div>
+            <div class="arch-card-file">sysinspector/src/fileOps.js</div>
+            <h3 class="arch-card-title">Sandboxed File CRUD</h3>
+            <p class="arch-card-purpose">Verifies relative pathways, handles path traversal verification, and records programmatic logs to the session. The <span class="mono-inline">FileOps</span> class is the gatekeeper of all file operations.</p>
+            <div class="arch-card-meta">
+              <div class="meta-row"><span>Role</span><span>Sandbox Boundary</span></div>
+              <div class="meta-row"><span>Depends on</span><span>fs · path</span></div>
+              <div class="meta-row"><span>Interactions</span><span>_resolveSafe(), confirm gating, audit logging</span></div>
+            </div>
+          </div>
+          <div class="arch-card">
+            <div class="arch-card-num">M05</div>
+            <div class="arch-card-file">sysinspector/src/htmlExport.js</div>
+            <h3 class="arch-card-title">HTML Exporter</h3>
+            <p class="arch-card-purpose">Houses templating utilities that build styling-rich, responsive dark-themed HTML report pages from query data objects.</p>
+            <div class="arch-card-meta">
+              <div class="meta-row"><span>Role</span><span>Report Renderer</span></div>
+              <div class="meta-row"><span>Depends on</span><span>Query data objects</span></div>
+              <div class="meta-row"><span>Interactions</span><span>renderInfoHtml(), dark-theme templates</span></div>
+            </div>
+          </div>
+          <div class="arch-card">
+            <div class="arch-card-num">M06</div>
+            <div class="arch-card-file">filemanager/index.js</div>
+            <h3 class="arch-card-title">Interactive File Shell</h3>
+            <p class="arch-card-purpose">Standalone shell utility. Supports Unix command scripts (<span class="mono-inline">cd</span>, <span class="mono-inline">cat</span>, <span class="mono-inline">ls</span>) alongside Windows CMD aliases, visual directory browsers, and command helper guidelines.</p>
+            <div class="arch-card-meta">
+              <div class="meta-row"><span>Role</span><span>Standalone Shell</span></div>
+              <div class="meta-row"><span>Depends on</span><span>fileOps.js (audit logs)</span></div>
+              <div class="meta-row"><span>Interactions</span><span>parseCommand(), normalize args, dispatch</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="sandbox-callout">
+          <div class="sc-label">SANDBOX BOUNDARY</div>
+          <p class="sc-text">Programmatic operations inside the sandbox are strictly regulated by the <span class="mono-inline">FileOps</span> class. The private <span class="mono-inline">_resolveSafe()</span> helper processes all incoming paths relative to the sandbox root. If a path tries to escape (e.g. <span class="mono-inline">../../etc/passwd</span>), a <span class="mono-inline">Sandbox escape blocked</span> error is thrown immediately.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CODE FLOW ============ -->
+<section id="codeflow" class="codeflow-section">
+  <div class="container">
+    <div class="section-label">[04] — CODE FLOW</div>
+    <h2 class="section-headline">Three workflows.<br>One render function.</h2>
+    <p class="section-lede">Every redraw request in <span class="mono-inline">sysinspector/src/cli.js</span> is routed to a single, central function: <span class="mono-inline">renderMenu()</span>. Event handlers only mutate state — the render function constructs the entire frame in memory and prints it atomically.</p>
+
+    <div class="timeline-block reveal">
+      <div class="timeline-header">
+        <span class="tl-num">A</span>
+        <h3 class="tl-title">Main Menu Interaction Loop</h3>
+        <span class="tl-source">source: cli.js · keypressLoop()</span>
+      </div>
+      <div class="timeline">
+        <div class="tl-node"><div class="tl-dot">1</div><div class="tl-content"><div class="tl-label">APP STARTUP</div><p>Entry via <span class="mono-inline">index.js main()</span> — arguments parsed, mode dispatched.</p></div></div>
+        <div class="tl-node"><div class="tl-dot">2</div><div class="tl-content"><div class="tl-label">RENDER MENU</div><p><span class="mono-inline">renderMenu()</span> constructs the full frame string (header, layout pane, details box) in memory and prints atomically.</p></div></div>
+        <div class="tl-node"><div class="tl-dot">3</div><div class="tl-content"><div class="tl-label">WAIT KEY</div><p>Keypress listener captures input. Guard verifies <span class="mono-inline">key</span> is present before accessing properties.</p></div></div>
+        <div class="tl-node"><div class="tl-dot">4</div><div class="tl-content"><div class="tl-label">ARROW MOVE / ENTER SELECT</div><p>Arrow keys mutate the <span class="mono-inline">selected</span> menu index. Enter triggers <span class="mono-inline">executeAction()</span>.</p></div></div>
+        <div class="tl-node"><div class="tl-dot">5</div><div class="tl-content"><div class="tl-label">UPDATE / EXECUTE</div><p>State change requested from <span class="mono-inline">renderMenu()</span> — loop continues. Ctrl+C restores terminal mode and exits 0.</p></div></div>
+      </div>
+    </div>
+
+    <div class="timeline-block reveal">
+      <div class="timeline-header">
+        <span class="tl-num">B</span>
+        <h3 class="tl-title">System Diagnostics Pipeline</h3>
+        <span class="tl-source">source: sysinfo.js · gatherSystemInfo()</span>
+      </div>
+      <div class="timeline">
+        <div class="tl-node"><div class="tl-dot">1</div><div class="tl-content"><div class="tl-label">SELECT OS INFO</div><p>User selects a diagnostic category from the menu (OS, CPU, Memory, Disk, Battery, Network).</p></div></div>
+        <div class="tl-node"><div class="tl-dot">2</div><div class="tl-content"><div class="tl-label">QUERY SYSINFO.JS</div><p>Calls <span class="mono-inline">gatherSystemInfo()</span> wrapped in <span class="mono-inline">safe()</span> — failures fall back to <span class="mono-inline">'N/A'</span> rather than crashing.</p></div></div>
+        <div class="tl-node"><div class="tl-dot">3</div><div class="tl-content"><div class="tl-label">FORMAT OUTPUT</div><p>Formats ANSI layout and ASCII OS logo via <span class="mono-inline">cli.js</span> rendering layer.</p></div></div>
+        <div class="tl-node"><div class="tl-dot">4</div><div class="tl-content"><div class="tl-label">WRITE EXPORTS</div><p>Writes <span class="mono-inline">&lt;name&gt;/&lt;name&gt;.json</span> and HTML report via <span class="mono-inline">renderInfoHtml()</span> into the sandbox subdirectory.</p></div></div>
+        <div class="tl-node"><div class="tl-dot">5</div><div class="tl-content"><div class="tl-label">DISPLAY SCROLL</div><p>Opens the Scrollable Output viewer with arrow-key navigation.</p></div></div>
+      </div>
+    </div>
+
+    <div class="timeline-block reveal">
+      <div class="timeline-header">
+        <span class="tl-num">C</span>
+        <h3 class="tl-title">File Manager Command Flow</h3>
+        <span class="tl-source">source: filemanager/index.js · startFileManager()</span>
+      </div>
+      <div class="timeline">
+        <div class="tl-node"><div class="tl-dot">1</div><div class="tl-content"><div class="tl-label">ENTER FILEMANAGER</div><p><span class="mono-inline">startFileManager()</span> invoked from main menu — shell prompt initialised.</p></div></div>
+        <div class="tl-node"><div class="tl-dot">2</div><div class="tl-content"><div class="tl-label">READ PROMPT</div><p>Captures user input line, preserving quoted spaces.</p></div></div>
+        <div class="tl-node"><div class="tl-dot">3</div><div class="tl-content"><div class="tl-label">PARSE COMMAND</div><p><span class="mono-inline">parseCommand()</span> splits tokens while preserving quoted arguments.</p></div></div>
+        <div class="tl-node"><div class="tl-dot">4</div><div class="tl-content"><div class="tl-label">NORMALIZE ARGS</div><p>Windows aliases mapped — <span class="mono-inline">dir → ls</span>, <span class="mono-inline">/s → -rf</span>, <span class="mono-inline">md → mkdir</span>, <span class="mono-inline">del → rm</span>, <span class="mono-inline">ren → mv</span>.</p></div></div>
+        <div class="tl-node"><div class="tl-dot">5</div><div class="tl-content"><div class="tl-label">DISPATCH</div><p>Routes to read/exit or destructive (<span class="mono-inline">rm</span>) branch. Destructive ops require <span class="mono-inline">-r/-rf</span> for folders.</p></div></div>
+        <div class="tl-node"><div class="tl-dot">6</div><div class="tl-content"><div class="tl-label">EXECUTE & LOG</div><p>Runs against the host system relative to current directory. Pushes audit action to <span class="mono-inline">fileOps.logAction()</span>.</p></div></div>
+      </div>
+    </div>
+
+    <div class="render-pattern-callout reveal">
+      <div class="rpc-label">SINGLE-RENDER-FUNCTION PATTERN</div>
+      <h3 class="rpc-title">State changes and terminal writes are separated.</h3>
+      <p class="rpc-text">Early iterations had console output scattered throughout choice-handling handlers, causing menu flickering, overlapping text lines, and layout breakage when resizing terminal windows. Event handlers now only mutate state (like the <span class="mono-inline">selected</span> menu index), then request an update from <span class="mono-inline">renderMenu()</span>, which prints the entire frame atomically using <span class="mono-inline">process.stdout.write('\x1b[H\x1b[J' + frame)</span>.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FEATURES ============ -->
+<section id="features" class="features-section">
+  <div class="container-wide">
+    <div class="section-label">[05] — FEATURES CATALOG</div>
+    <h2 class="section-headline">Built for developers<br>who actually <em>use</em> the terminal.</h2>
+    <p class="section-lede">Four feature categories, all cross-platform. Inspector normalises Windows CMD commands into Unix equivalents — developers can navigate seamlessly regardless of their native operating system shell.</p>
+
+    <div class="features-grid">
+      <article class="feature-card reveal">
+        <div class="fc-header">
+          <span class="fc-tag">F01 · SYSTEM INFORMATION</span>
+          <span class="fc-platforms">WIN · LIN · MAC</span>
+        </div>
+        <h3 class="fc-title">System Information</h3>
+        <p class="fc-desc">Gathers platform diagnostics across OS, CPU, memory, storage, power, and network categories. Provides immediate diagnostic context for platform-dependent issues.</p>
+        <div class="fc-capabilities">
+          <div class="cap-row"><span class="cap-name">OS Details</span><span class="cap-desc">Type, release version, architecture, uptime, host</span></div>
+          <div class="cap-row"><span class="cap-name">CPU Profile</span><span class="cap-desc">Model, physical/logical cores, speed (MHz), load %</span></div>
+          <div class="cap-row"><span class="cap-name">Memory & Storage</span><span class="cap-desc">Total/available physical memory, mounted disk usages</span></div>
+          <div class="cap-row"><span class="cap-name">Power & Network</span><span class="cap-desc">Battery level/charging, active interfaces (IP, MAC, CIDR)</span></div>
+        </div>
+        <div class="fc-meta">
+          <div class="meta-cell"><span class="mc-key">SOURCE</span><span class="mc-val">sysinfo.js</span></div>
+          <div class="meta-cell"><span class="mc-key">QUERIES</span><span class="mc-val">4 categories</span></div>
+          <div class="meta-cell"><span class="mc-key">SAFETY</span><span class="mc-val">safe() wrapped</span></div>
+        </div>
+      </article>
+
+      <article class="feature-card reveal">
+        <div class="fc-header">
+          <span class="fc-tag">F02 · FILE MANAGER</span>
+          <span class="fc-platforms">WIN · LIN · MAC</span>
+        </div>
+        <h3 class="fc-title">File Manager</h3>
+        <p class="fc-desc">Dual operation modes — command-line shell interface and interactive arrow-key list browsing. Unified command system prevents manual translation overhead during command execution.</p>
+        <div class="fc-capabilities">
+          <div class="cap-row"><span class="cap-name">Dual Operation Modes</span><span class="cap-desc">CLI shell + visual arrow-key browsing</span></div>
+          <div class="cap-row"><span class="cap-name">Unified Command System</span><span class="cap-desc">dir → ls · md → mkdir · del → rm · ren → mv</span></div>
+          <div class="cap-row"><span class="cap-name">File Space Preservation</span><span class="cap-desc">Standardizes UNIX flags (rm -rf) + Windows args (rmdir /s)</span></div>
+        </div>
+        <div class="fc-meta">
+          <div class="meta-cell"><span class="mc-key">SOURCE</span><span class="mc-val">filemanager/index.js</span></div>
+          <div class="meta-cell"><span class="mc-key">MODES</span><span class="mc-val">2 (shell + visual)</span></div>
+          <div class="meta-cell"><span class="mc-key">ALIASES</span><span class="mc-val">Win → Unix map</span></div>
+        </div>
+      </article>
+
+      <article class="feature-card reveal">
+        <div class="fc-header">
+          <span class="fc-tag">F03 · SAFETY & SECURITY</span>
+          <span class="fc-platforms">DEFENSIVE</span>
+        </div>
+        <h3 class="fc-title">Safety & Security</h3>
+        <p class="fc-desc">Three-layer protection against credential leaks, accidental overrides, and directory escape attacks. Designed for security-conscious developer workflows.</p>
+        <div class="fc-capabilities">
+          <div class="cap-row"><span class="cap-name">Double-Pass Env Redaction</span><span class="cap-desc">SAFE_ENV_KEYS allow-list + looksSecret() pattern redaction (*SECRET*, *TOKEN*, *API_KEY*)</span></div>
+          <div class="cap-row"><span class="cap-name">CRUD Confirmation Gating</span><span class="cap-desc">Requires programmatic confirm = true for update and delete</span></div>
+          <div class="cap-row"><span class="cap-name">Path Traversal Shield</span><span class="cap-desc">Resolves relative paths inside sandbox via _resolveSafe()</span></div>
+        </div>
+        <div class="fc-meta">
+          <div class="meta-cell"><span class="mc-key">BOUNDARY</span><span class="mc-val">fileOps.js</span></div>
+          <div class="meta-cell"><span class="mc-key">GATEKEEPER</span><span class="mc-val">_resolveSafe()</span></div>
+          <div class="meta-cell"><span class="mc-key">PATTERNS</span><span class="mc-val">3 redaction</span></div>
+        </div>
+      </article>
+
+      <article class="feature-card reveal">
+        <div class="fc-header">
+          <span class="fc-tag">F04 · EXPORT</span>
+          <span class="fc-platforms">JSON + HTML</span>
+        </div>
+        <h3 class="fc-title">Export System</h3>
+        <p class="fc-desc">Generates JSON files alongside styling-packed, dark-themed HTML documents. Diagnostic logs can be ingested by other tools or opened directly as styled web pages.</p>
+        <div class="fc-capabilities">
+          <div class="cap-row"><span class="cap-name">JSON Reports</span><span class="cap-desc">Raw structured data for programmatic ingestion</span></div>
+          <div class="cap-row"><span class="cap-name">Interactive HTML Reports</span><span class="cap-desc">Self-contained, styling-rich, dark-themed, responsive</span></div>
+          <div class="cap-row"><span class="cap-name">Sandboxed Output Directories</span><span class="cap-desc">os-info/ · cpu-info/ · memory-info/ · disk-info/ · battery-info/ · network-info/</span></div>
+        </div>
+        <div class="fc-meta">
+          <div class="meta-cell"><span class="mc-key">SOURCE</span><span class="mc-val">htmlExport.js</span></div>
+          <div class="meta-cell"><span class="mc-key">FORMATS</span><span class="mc-val">JSON + HTML</span></div>
+          <div class="meta-cell"><span class="mc-key">RENDERER</span><span class="mc-val">renderInfoHtml()</span></div>
+        </div>
+      </article>
+    </div>
+
+    <div class="platform-matrix reveal">
+      <div class="pm-label">PLATFORM SUPPORT MATRIX</div>
+      <div class="pm-grid">
+        <div class="pm-row pm-head">
+          <span class="pm-cell pm-feature">Feature</span>
+          <span class="pm-cell">Windows</span>
+          <span class="pm-cell">Linux</span>
+          <span class="pm-cell">macOS</span>
+          <span class="pm-cell pm-impl">Implementation</span>
+        </div>
+        <div class="pm-row"><span class="pm-cell pm-feature">OS Core Details</span><span class="pm-cell">✓</span><span class="pm-cell">✓</span><span class="pm-cell">✓</span><span class="pm-cell pm-impl">Standard Node os module methods</span></div>
+        <div class="pm-row"><span class="pm-cell pm-feature">CPU Model & Cores</span><span class="pm-cell">✓</span><span class="pm-cell">✓</span><span class="pm-cell">✓</span><span class="pm-cell pm-impl">Standard Node os.cpus() checks</span></div>
+        <div class="pm-row"><span class="pm-cell pm-feature">CPU Load / Load Avg</span><span class="pm-cell">Load%</span><span class="pm-cell">LoadAvg</span><span class="pm-cell">LoadAvg</span><span class="pm-cell pm-impl">Win32: powershell · Unix: os.loadavg()</span></div>
+        <div class="pm-row"><span class="pm-cell pm-feature">Disk Info</span><span class="pm-cell">✓</span><span class="pm-cell">✓</span><span class="pm-cell">✓</span><span class="pm-cell pm-impl">Win32: Get-CimInstance · Unix: df -h</span></div>
+        <div class="pm-row"><span class="pm-cell pm-feature">Battery Level</span><span class="pm-cell">✓</span><span class="pm-cell">✓</span><span class="pm-cell">✓</span><span class="pm-cell pm-impl">Win32: powershell · Linux: /sys · Darwin: pmset</span></div>
+        <div class="pm-row"><span class="pm-cell pm-feature">Network Interfaces</span><span class="pm-cell">✓</span><span class="pm-cell">✓</span><span class="pm-cell">✓</span><span class="pm-cell pm-impl">Standard Node os.networkInterfaces()</span></div>
+        <div class="pm-row"><span class="pm-cell pm-feature">File Manager Shell</span><span class="pm-cell">✓</span><span class="pm-cell">✓</span><span class="pm-cell">✓</span><span class="pm-cell pm-impl">Custom JS shell · Node fs · process.chdir()</span></div>
+        <div class="pm-row"><span class="pm-cell pm-feature">Command Aliases</span><span class="pm-cell">✓</span><span class="pm-cell">✓</span><span class="pm-cell">✓</span><span class="pm-cell pm-impl">Map table in filemanager/index.js</span></div>
+        <div class="pm-row"><span class="pm-cell pm-feature">Report Exporting</span><span class="pm-cell">✓</span><span class="pm-cell">✓</span><span class="pm-cell">✓</span><span class="pm-cell pm-impl">Synchronous workspace writes</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ERROR HANDLING ============ -->
+<section id="errors" class="errors-section">
+  <div class="container-wide">
+    <div class="section-label">[06] — ERROR & SAFETY HANDLING</div>
+    <h2 class="section-headline">Defensive by default.<br>Crash-proof by design.</h2>
+    <p class="section-lede">Querying low-level OS structures can throw unexpected errors on unsupported platforms or under restricted permissions. Inspector wraps every gather function in <span class="mono-inline">safe()</span> and gates every destructive file operation behind a confirm flag.</p>
+
+    <div class="errors-split">
+      <div class="errors-left">
+        <div class="el-label">FAILURE SCENARIO LOG MATRIX</div>
+        <div class="failure-table">
+          <div class="ft-row ft-head">
+            <span>Scenario</span>
+            <span>Code Behavior</span>
+            <span>Handler</span>
+          </div>
+          <div class="ft-row">
+            <span class="ft-scenario">OS CPU/Memory Query Fails</span>
+            <span class="ft-behavior">Returns <span class="mono-inline">'N/A'</span> gracefully</span>
+            <span class="ft-handler">sysinfo.js → safe()</span>
+          </div>
+          <div class="ft-row">
+            <span class="ft-scenario">Sandbox Path Escape</span>
+            <span class="ft-behavior">Throws <span class="mono-inline">Sandbox escape blocked</span></span>
+            <span class="ft-handler">fileOps.js → _resolveSafe()</span>
+          </div>
+          <div class="ft-row">
+            <span class="ft-scenario">Update without Confirm</span>
+            <span class="ft-behavior">Throws <span class="mono-inline">Update blocked</span> exception</span>
+            <span class="ft-handler">fileOps.js → update()</span>
+          </div>
+          <div class="ft-row">
+            <span class="ft-scenario">Delete without Confirm</span>
+            <span class="ft-behavior">Throws <span class="mono-inline">Delete blocked</span> exception</span>
+            <span class="ft-handler">fileOps.js → delete()</span>
+          </div>
+          <div class="ft-row">
+            <span class="ft-scenario">Command Timeout</span>
+            <span class="ft-behavior">Throws dynamic timeout exception</span>
+            <span class="ft-handler">sysinfo.js → execWithTimeout()</span>
+          </div>
+          <div class="ft-row">
+            <span class="ft-scenario">Visual Feature Load Error</span>
+            <span class="ft-behavior">Displays error panel in Scroll View</span>
+            <span class="ft-handler">cli.js → executeAction().catch()</span>
+          </div>
+          <div class="ft-row">
+            <span class="ft-scenario">Ctrl+C Force Quit</span>
+            <span class="ft-behavior">Restores Terminal mode, exits with 0</span>
+            <span class="ft-handler">cli.js → keypressLoop() onKeypress</span>
+          </div>
+          <div class="ft-row">
+            <span class="ft-scenario">Fatal Process Error</span>
+            <span class="ft-behavior">Logs error to stderr, exits with 1</span>
+            <span class="ft-handler">index.js → main().catch()</span>
+          </div>
+          <div class="ft-row">
+            <span class="ft-scenario">Invalid Directory Listing</span>
+            <span class="ft-behavior">Throws <span class="mono-inline">Not a directory</span> / <span class="mono-inline">Directory not found</span></span>
+            <span class="ft-handler">fileOps.js → list()</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="errors-right">
+        <div class="er-label">SAFETY PHILOSOPHY</div>
+        <div class="safety-card reveal">
+          <div class="sc-num">01</div>
+          <h4 class="sc-title">Gracious Fallbacks via safe()</h4>
+          <p class="sc-text">The utility helper <span class="mono-inline">safe(fn, fallback = 'N/A')</span> in <span class="mono-inline">sysinfo.js</span> wraps every metrics gathering function. If it throws, the CLI displays <span class="mono-inline">N/A</span> rather than terminating the process.</p>
+        </div>
+        <div class="safety-card reveal">
+          <div class="sc-num">02</div>
+          <h4 class="sc-title">Path Traversal Protection</h4>
+          <p class="sc-text">CRUD operations evaluate path destinations via <span class="mono-inline">_resolveSafe()</span>. Paths are resolved with <span class="mono-inline">path.resolve()</span> and checked against the sandbox root. Implemented on <span class="mono-inline">create()</span>, <span class="mono-inline">read()</span>, <span class="mono-inline">update()</span>, <span class="mono-inline">delete()</span>, and <span class="mono-inline">list()</span>.</p>
+        </div>
+        <div class="safety-card reveal">
+          <div class="sc-num">03</div>
+          <h4 class="sc-title">Programmatic Confirm Gating</h4>
+          <p class="sc-text">Accidental file overrides are blocked inside <span class="mono-inline">FileOps</span>'s update and delete operations. Functions throw a <span class="mono-inline">Confirm flag not set</span> error unless the parameter <span class="mono-inline">confirm === true</span> is passed.</p>
+        </div>
+        <div class="safety-card reveal">
+          <div class="sc-num">04</div>
+          <h4 class="sc-title">Keypress Crash Guards</h4>
+          <p class="sc-text">In Node.js CLI keypress listeners, users pressing hotkeys or mouse buttons emit key objects with undefined fields. Guards verify that <span class="mono-inline">key</span> is present before accessing properties — ignoring raw mouse escape codes.</p>
+        </div>
+        <div class="safety-card reveal">
+          <div class="sc-num">05</div>
+          <h4 class="sc-title">Ctrl+C Graceful Exit</h4>
+          <p class="sc-text">Force-quit restores terminal mode and exits with code 0 — preventing raw-mode terminal corruption on the host shell session.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CODEBASE ============ -->
+<section id="codebase" class="codebase-section">
+  <div class="container-wide">
+    <div class="section-label">[07] — CODEBASE MAPPING</div>
+    <h2 class="section-headline">Every file.<br>Every responsibility.</h2>
+    <p class="section-lede">Hover (or tap) any flip card to reveal the responsibilities, functions, and dependencies of each source file in the Inspector codebase.</p>
+
+    <div class="flip-grid">
+      <div class="flip-card" tabindex="0">
+        <div class="flip-inner">
+          <div class="flip-front">
+            <div class="ff-path">/</div>
+            <div class="ff-name">package.json</div>
+            <div class="ff-purpose">Root project configuration metadata</div>
+            <div class="ff-hint">HOVER TO FLIP →</div>
+          </div>
+          <div class="flip-back">
+            <div class="fb-name">package.json</div>
+            <div class="fb-section"><span class="fb-key">RESPONSIBILITIES</span><p>Defines CLI shortcuts (<span class="mono-inline">npm start</span>, <span class="mono-inline">npm run info</span>, <span class="mono-inline">npm run info:json</span>) and targets the entry point.</p></div>
+            <div class="fb-section"><span class="fb-key">CLASSIFICATION</span><p>Root configuration</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flip-card" tabindex="0">
+        <div class="flip-inner">
+          <div class="flip-front">
+            <div class="ff-path">/</div>
+            <div class="ff-name">TASKS.md</div>
+            <div class="ff-purpose">Hackathon task checklist</div>
+            <div class="ff-hint">HOVER TO FLIP →</div>
+          </div>
+          <div class="flip-back">
+            <div class="fb-name">TASKS.md</div>
+            <div class="fb-section"><span class="fb-key">RESPONSIBILITIES</span><p>Checklist tracing hackathon tasks, features, enhancements, bug fixes, and documentation milestones.</p></div>
+            <div class="fb-section"><span class="fb-key">CLASSIFICATION</span><p>Project tracking</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flip-card" tabindex="0">
+        <div class="flip-inner">
+          <div class="flip-front">
+            <div class="ff-path">sysinspector/</div>
+            <div class="ff-name">project.md</div>
+            <div class="ff-purpose">Internal module guide</div>
+            <div class="ff-hint">HOVER TO FLIP →</div>
+          </div>
+          <div class="flip-back">
+            <div class="fb-name">project.md</div>
+            <div class="fb-section"><span class="fb-key">RESPONSIBILITIES</span><p>Guide explaining sysinspector module connections, layout designs, and security policies.</p></div>
+            <div class="fb-section"><span class="fb-key">CLASSIFICATION</span><p>Internal documentation</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flip-card" tabindex="0">
+        <div class="flip-inner">
+          <div class="flip-front">
+            <div class="ff-path">sysinspector/src/</div>
+            <div class="ff-name">index.js</div>
+            <div class="ff-purpose">Entry point · CLI parser</div>
+            <div class="ff-hint">HOVER TO FLIP →</div>
+          </div>
+          <div class="flip-back">
+            <div class="fb-name">index.js</div>
+            <div class="fb-section"><span class="fb-key">RESPONSIBILITIES</span><p>Command-line parser and router. Evaluates arguments (<span class="mono-inline">--json</span>, <span class="mono-inline">--dir</span>), runs one-shot system reports, starts the menu loop.</p></div>
+            <div class="fb-section"><span class="fb-key">CLASSIFICATION</span><p>Entry Point</p></div>
+            <div class="fb-section"><span class="fb-key">DEPENDENCIES</span><p>cli.js</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flip-card" tabindex="0">
+        <div class="flip-inner">
+          <div class="flip-front">
+            <div class="ff-path">sysinspector/src/</div>
+            <div class="ff-name">cli.js</div>
+            <div class="ff-purpose">Interactive menu interface</div>
+            <div class="ff-hint">HOVER TO FLIP →</div>
+          </div>
+          <div class="flip-back">
+            <div class="fb-name">cli.js</div>
+            <div class="fb-section"><span class="fb-key">RESPONSIBILITIES</span><p>Controls keypress loops and interface render cycle. Captures arrow-key inputs, queries real-time diagnostics, runs Scrollable Output viewer, links with exporting and file manager subsystems.</p></div>
+            <div class="fb-section"><span class="fb-key">FUNCTIONS</span><p>renderMenu() · executeAction() · keypressLoop() · onKeypress() · onScrollKeypress()</p></div>
+            <div class="fb-section"><span class="fb-key">CLASSIFICATION</span><p>Internal Module</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flip-card" tabindex="0">
+        <div class="flip-inner">
+          <div class="flip-front">
+            <div class="ff-path">sysinspector/src/</div>
+            <div class="ff-name">sysinfo.js</div>
+            <div class="ff-purpose">System reporter · safe() wrapper</div>
+            <div class="ff-hint">HOVER TO FLIP →</div>
+          </div>
+          <div class="flip-back">
+            <div class="fb-name">sysinfo.js</div>
+            <div class="fb-section"><span class="fb-key">RESPONSIBILITIES</span><p>System reporter. Runs processes dynamically under baselined process timeouts to gather platform properties.</p></div>
+            <div class="fb-section"><span class="fb-key">FUNCTIONS</span><p>safe() · gatherSystemInfo() · execWithTimeout() · looksSecret()</p></div>
+            <div class="fb-section"><span class="fb-key">FILTERS</span><p>SAFE_ENV_KEYS allow-list</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flip-card" tabindex="0">
+        <div class="flip-inner">
+          <div class="flip-front">
+            <div class="ff-path">sysinspector/src/</div>
+            <div class="ff-name">fileOps.js</div>
+            <div class="ff-purpose">Sandboxed File CRUD interface</div>
+            <div class="ff-hint">HOVER TO FLIP →</div>
+          </div>
+          <div class="flip-back">
+            <div class="fb-name">fileOps.js</div>
+            <div class="fb-section"><span class="fb-key">RESPONSIBILITIES</span><p>Verifies relative pathways, handles path traversal verification, records programmatic logs to the session.</p></div>
+            <div class="fb-section"><span class="fb-key">FUNCTIONS</span><p>_resolveSafe() · create() · read() · update() · delete() · list() · logAction()</p></div>
+            <div class="fb-section"><span class="fb-key">CLASSIFICATION</span><p>Sandbox Boundary</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flip-card" tabindex="0">
+        <div class="flip-inner">
+          <div class="flip-front">
+            <div class="ff-path">sysinspector/src/</div>
+            <div class="ff-name">htmlExport.js</div>
+            <div class="ff-purpose">HTML exporter · templating</div>
+            <div class="ff-hint">HOVER TO FLIP →</div>
+          </div>
+          <div class="flip-back">
+            <div class="fb-name">htmlExport.js</div>
+            <div class="fb-section"><span class="fb-key">RESPONSIBILITIES</span><p>Houses templating utilities that build styling-rich, responsive dark-themed HTML report pages from query data objects.</p></div>
+            <div class="fb-section"><span class="fb-key">FUNCTIONS</span><p>renderInfoHtml()</p></div>
+            <div class="fb-section"><span class="fb-key">CLASSIFICATION</span><p>Internal Module</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flip-card" tabindex="0">
+        <div class="flip-inner">
+          <div class="flip-front">
+            <div class="ff-path">filemanager/</div>
+            <div class="ff-name">index.js</div>
+            <div class="ff-purpose">Standalone shell utility</div>
+            <div class="ff-hint">HOVER TO FLIP →</div>
+          </div>
+          <div class="flip-back">
+            <div class="fb-name">filemanager/index.js</div>
+            <div class="fb-section"><span class="fb-key">RESPONSIBILITIES</span><p>Standalone shell utility. Supports Unix command scripts (<span class="mono-inline">cd</span>, <span class="mono-inline">cat</span>, <span class="mono-inline">ls</span>) alongside Windows CMD command-line aliases, visual directory browsers, and command helper guidelines.</p></div>
+            <div class="fb-section"><span class="fb-key">FUNCTIONS</span><p>startFileManager() · parseCommand() · onKey()</p></div>
+            <div class="fb-section"><span class="fb-key">CLASSIFICATION</span><p>Internal Module</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="classification-block reveal">
+      <div class="cb-label">CLASSIFICATION OF FILES</div>
+      <div class="cb-grid">
+        <div class="cb-col">
+          <div class="cb-col-num">01</div>
+          <div class="cb-col-title">Entry Points</div>
+          <div class="cb-col-text">sysinspector/src/index.js — the main executable file that resolves commands and flags.</div>
+        </div>
+        <div class="cb-col">
+          <div class="cb-col-num">02</div>
+          <div class="cb-col-title">Internal Modules</div>
+          <div class="cb-col-text">cli.js · sysinfo.js · fileOps.js · htmlExport.js · filemanager/index.js — five modules controlling keypress loops, OS queries, path traversal, HTML rendering, and the interactive file shell.</div>
+        </div>
+        <div class="cb-col">
+          <div class="cb-col-num">03</div>
+          <div class="cb-col-title">Generated Outputs</div>
+          <div class="cb-col-text">logs/session_*.log · os-info/ · cpu-info/ · memory-info/ · disk-info/ · battery-info/ · network-info/ — subfolders containing raw .json and parsed .html diagnostic snapshots, excluded from the source tree.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DOCUMENTATION ============ -->
+<section id="docs" class="docs-section">
+  <div class="container">
+    <div class="section-label">[08] — DOCUMENTATION INDEX</div>
+    <h2 class="section-headline">The complete<br>documentation set.</h2>
+    <p class="section-lede">Six modular files organized inside the <span class="mono-inline">docs/</span> folder — each one focused on a single concern.</p>
+
+    <div class="docs-list">
+      <a href="https://github.com/srikant-panda/inspector/blob/main/README.md" target="_blank" rel="noopener" class="doc-row" data-cursor-hover>
+        <div class="dr-num">00</div>
+        <div class="dr-main">
+          <div class="dr-title">README.md</div>
+          <div class="dr-desc">Project overview, documentation index, condensed architecture, and quickstart commands.</div>
+        </div>
+        <div class="dr-purpose">Project entry point</div>
+        <div class="dr-arrow">↗</div>
+      </a>
+      <a href="https://github.com/srikant-panda/inspector/blob/main/docs/ARCHITECTURE.md" target="_blank" rel="noopener" class="doc-row" data-cursor-hover>
+        <div class="dr-num">01</div>
+        <div class="dr-main">
+          <div class="dr-title">docs/ARCHITECTURE.md</div>
+          <div class="dr-desc">Explains components relationship, module dependency maps, and sandbox boundaries.</div>
+        </div>
+        <div class="dr-purpose">System architecture</div>
+        <div class="dr-arrow">↗</div>
+      </a>
+      <a href="https://github.com/srikant-panda/inspector/blob/main/docs/CODE_FLOW.md" target="_blank" rel="noopener" class="doc-row" data-cursor-hover>
+        <div class="dr-num">02</div>
+        <div class="dr-main">
+          <div class="dr-title">docs/CODE_FLOW.md</div>
+          <div class="dr-desc">Dotted workflow diagrams showing application startup, diagnostic query, and file operations.</div>
+        </div>
+        <div class="dr-purpose">Execution sequences</div>
+        <div class="dr-arrow">↗</div>
+      </a>
+      <a href="https://github.com/srikant-panda/inspector/blob/main/docs/FEATURES.md" target="_blank" rel="noopener" class="doc-row" data-cursor-hover>
+        <div class="dr-num">03</div>
+        <div class="dr-main">
+          <div class="dr-title">docs/FEATURES.md</div>
+          <div class="dr-desc">Highlights individual capabilities (System Info, File Manager, Safety) and platform support matrix.</div>
+        </div>
+        <div class="dr-purpose">Features catalog</div>
+        <div class="dr-arrow">↗</div>
+      </a>
+      <a href="https://github.com/srikant-panda/inspector/blob/main/docs/ERROR_HANDLING.md" target="_blank" rel="noopener" class="doc-row" data-cursor-hover>
+        <div class="dr-num">04</div>
+        <div class="dr-main">
+          <div class="dr-title">docs/ERROR_HANDLING.md</div>
+          <div class="dr-desc">Documents crash-prevention guidelines (safe()), path resolutions, and error matrices.</div>
+        </div>
+        <div class="dr-purpose">Safety & failures</div>
+        <div class="dr-arrow">↗</div>
+      </a>
+      <a href="https://github.com/srikant-panda/inspector/blob/main/docs/CODEBASE.md" target="_blank" rel="noopener" class="doc-row" data-cursor-hover>
+        <div class="dr-num">05</div>
+        <div class="dr-main">
+          <div class="dr-title">docs/CODEBASE.md</div>
+          <div class="dr-desc">A directory structural reference outlining file responsibilities and outputs.</div>
+        </div>
+        <div class="dr-purpose">Codebase map</div>
+        <div class="dr-arrow">↗</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ MARQUEE ============ -->
+<section class="marquee-section">
+  <div class="marquee" id="marquee">
+    <div class="marquee-track">
+      <span class="mq-item">SANDBOXED</span><span class="mq-dot">•</span>
+      <span class="mq-item">CONFIRM GATED</span><span class="mq-dot">•</span>
+      <span class="mq-item">CROSS PLATFORM</span><span class="mq-dot">•</span>
+      <span class="mq-item">JSON EXPORT</span><span class="mq-dot">•</span>
+      <span class="mq-item">SECRET REDACTION</span><span class="mq-dot">•</span>
+      <span class="mq-item">PATH TRAVERSAL SHIELD</span><span class="mq-dot">•</span>
+      <span class="mq-item">ZERO DEPENDENCY</span><span class="mq-dot">•</span>
+      <span class="mq-item">DARK MODE HTML</span><span class="mq-dot">•</span>
+      <span class="mq-item">SANDBOXED</span><span class="mq-dot">•</span>
+      <span class="mq-item">CONFIRM GATED</span><span class="mq-dot">•</span>
+      <span class="mq-item">CROSS PLATFORM</span><span class="mq-dot">•</span>
+      <span class="mq-item">JSON EXPORT</span><span class="mq-dot">•</span>
+      <span class="mq-item">SECRET REDACTION</span><span class="mq-dot">•</span>
+      <span class="mq-item">PATH TRAVERSAL SHIELD</span><span class="mq-dot">•</span>
+      <span class="mq-item">ZERO DEPENDENCY</span><span class="mq-dot">•</span>
+      <span class="mq-item">DARK MODE HTML</span><span class="mq-dot">•</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer id="footer" class="footer">
+  <div class="footer-grid">
+    <div class="footer-left">
+      <div class="fl-label">[09] — INSPECTOR</div>
+      <h2 class="fl-headline">Modular diagnostics.<br>Sandboxed file ops.<br>Zero dependencies.</h2>
+      <p class="fl-text">Built as a dev-utility package — aggregates low-level system metrics and routes them into terminal views, JSON data payloads, and styled dark-mode HTML reports.</p>
+    </div>
+    <div class="footer-right">
+      <div class="fr-col">
+        <div class="fr-col-label">SOURCE</div>
+        <a href="https://github.com/srikant-panda/inspector" target="_blank" rel="noopener" class="fr-link" data-cursor-hover>GitHub Repository ↗</a>
+        <a href="https://github.com/srikant-panda/inspector/blob/main/README.md" target="_blank" rel="noopener" class="fr-link" data-cursor-hover>README.md ↗</a>
+      </div>
+      <div class="fr-col">
+        <div class="fr-col-label">DOCUMENTATION</div>
+        <a href="https://github.com/srikant-panda/inspector/blob/main/docs/ARCHITECTURE.md" target="_blank" rel="noopener" class="fr-link" data-cursor-hover>Architecture ↗</a>
+        <a href="https://github.com/srikant-panda/inspector/blob/main/docs/FEATURES.md" target="_blank" rel="noopener" class="fr-link" data-cursor-hover>Features ↗</a>
+        <a href="https://github.com/srikant-panda/inspector/blob/main/docs/CODE_FLOW.md" target="_blank" rel="noopener" class="fr-link" data-cursor-hover>Code Flow ↗</a>
+        <a href="https://github.com/srikant-panda/inspector/blob/main/docs/ERROR_HANDLING.md" target="_blank" rel="noopener" class="fr-link" data-cursor-hover>Error Handling ↗</a>
+        <a href="https://github.com/srikant-panda/inspector/blob/main/docs/CODEBASE.md" target="_blank" rel="noopener" class="fr-link" data-cursor-hover>Codebase ↗</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-wordmark" aria-hidden="true">INSPECTOR</div>
+  <div class="footer-base">
+    <span>INSPECTOR · NODE.JS CLI · v1.0</span>
+    <span>BUILT FOR HACKATHON</span>
+    <span>MIT LICENSE</span>
+  </div>
+</footer>
+
+<!-- ============ STICKY BOTTOM CTA ============ -->
+<div class="bottom-cta">
+  <div class="bc-left">
+    <span class="bc-pulse"></span>
+    <span class="bc-status">SYSTEM READY</span>
+  </div>
+  <div class="bc-right">
+    <a href="https://github.com/srikant-panda/inspector" target="_blank" rel="noopener" class="bc-btn bc-primary" data-cursor-hover>View Source ↗</a>
+    <a href="#docs" class="bc-btn bc-secondary" data-cursor-hover>Read Documentation →</a>
+  </div>
+</div>
+
+<!-- ============ SCRIPTS ============ -->
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.3.13/dist/lenis.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
