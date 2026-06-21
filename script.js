@@ -729,3 +729,24 @@ window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(() => ScrollTrigger.refresh(), 200);
 });
+
+// ============================================
+// ISSUE SOLVER NAV — ACTIVE HIGHLIGHT ON SCROLL
+// ============================================
+const issueCats = document.querySelectorAll('.issue-category');
+const issueLinks = document.querySelectorAll('.issue-nav-link');
+
+if (issueCats.length > 0) {
+  const issueObs = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.id;
+        issueLinks.forEach(link => {
+          link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+        });
+      }
+    });
+  }, { rootMargin: '-30% 0px -60% 0px' });
+
+  issueCats.forEach(cat => issueObs.observe(cat));
+}

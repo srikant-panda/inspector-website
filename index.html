@@ -41,6 +41,7 @@
       <li><a href="#architecture" data-cursor-hover>Architecture</a></li>
       <li><a href="#codeflow" data-cursor-hover>Code Flow</a></li>
       <li><a href="#streams" data-cursor-hover>Proofs</a></li>
+      <li><a href="#issues" data-cursor-hover>Issues</a></li>
       <li><a href="#features" data-cursor-hover>Features</a></li>
       <li><a href="#errors" data-cursor-hover>Error Handling</a></li>
       <li><a href="#codebase" data-cursor-hover>Codebase</a></li>
@@ -324,10 +325,444 @@
   <div class="lb-caption" id="lb-caption"></div>
 </div>
 
+<!-- ============ ARCHITECTURAL ISSUE SOLVER ============ -->
+<section id="issues" class="issues-section">
+  <div class="container-wide">
+    <div class="section-label">[07] — ARCHITECTURAL ISSUE SOLVER</div>
+    <div class="sticky-pair">
+      
+      <!-- Left Sticky Nav -->
+      <div class="sticky-left">
+        <h2 class="section-headline">23 problems.<br>23 engineered<br>solutions.</h2>
+        <p class="section-lede">A catalog of the small but significant architectural problems encountered during development. Each entry explains why the issue existed, what problem it caused, and how it was solved with code references.</p>
+        
+        <div class="issue-nav">
+          <div class="issue-nav-label">CATEGORIES</div>
+          <ul class="issue-nav-list">
+            <li><a href="#cat-rendering" class="issue-nav-link active" data-cursor-hover><span>01</span> Rendering & Terminal UI</a></li>
+            <li><a href="#cat-performance" class="issue-nav-link" data-cursor-hover><span>02</span> Performance & Responsiveness</a></li>
+            <li><a href="#cat-input" class="issue-nav-link" data-cursor-hover><span>03</span> Input Handling & Raw Mode</a></li>
+            <li><a href="#cat-crossplatform" class="issue-nav-link" data-cursor-hover><span>04</span> Cross-Platform Compatibility</a></li>
+            <li><a href="#cat-filemanager" class="issue-nav-link" data-cursor-hover><span>05</span> File Manager Intelligence</a></li>
+            <li><a href="#cat-export" class="issue-nav-link" data-cursor-hover><span>06</span> Data Export & Logging</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Right Scrolling Content -->
+      <div class="sticky-right">
+        
+        <!-- Category 1 -->
+        <div class="issue-category" id="cat-rendering">
+          <div class="cat-header"><span class="cat-num">01</span><h3 class="cat-title">Rendering & Terminal UI</h3></div>
+          
+          <div class="issue-card reveal">
+            <div class="issue-card-head"><span class="issue-num">001</span><h4 class="issue-title">Single Atomic Render Function</h4></div>
+            <div class="issue-grid">
+              <div class="issue-block"><span class="ib-label">WHY IT EXISTED</span><p>Early versions had multiple scattered <span class="mono-inline">console.log()</span> calls writing to stdout at different points — menu rendering, action output, preview panes. This caused flickering, partial redraws, and race conditions during terminal resize.</p></div>
+              <div class="issue-block"><span class="ib-label">PROBLEM</span><p>Every <span class="mono-inline">console.log()</span> call is a separate write to stdout. Between calls, the terminal could render a half-drawn frame, causing visible tearing. Resizing the terminal mid-render compounded the issue.</p></div>
+              <div class="issue-block"><span class="ib-label">SOLUTION</span><p>Consolidated ALL menu-related stdout writes into a single <span class="mono-inline">renderMenu()</span> function that clears the screen and writes the complete frame in one atomic <span class="mono-inline">process.stdout.write()</span> call.</p></div>
+            </div>
+            <pre class="issue-code"><span class="cmt">// cli.js → renderMenu()</span>
+<span class="cmt">// THE ONLY write for menu rendering — clear screen + full frame, one call</span>
+process.stdout.write(<span class="str">'\x1b[H\x1b[J'</span> + frame);</pre>
+          </div>
+
+          <div class="issue-card reveal">
+            <div class="issue-card-head"><span class="issue-num">002</span><h4 class="issue-title">Responsive Preview Pane</h4></div>
+            <div class="issue-grid">
+              <div class="issue-block"><span class="ib-label">WHY IT EXISTED</span><p>The arrow-key menu shows a live preview of the selected item. On wide terminals, the preview should sit beside the menu. On narrow terminals, it should stack below to avoid line-wrapping corruption.</p></div>
+              <div class="issue-block"><span class="ib-label">PROBLEM</span><p>Fixed layouts broke on terminals narrower than ~115 columns — preview text would wrap and misalign the menu. On short terminals (< 25 rows), double-spaced menu items pushed the preview off-screen.</p></div>
+              <div class="issue-block"><span class="ib-label">SOLUTION</span><p><span class="mono-inline">renderMenu()</span> queries <span class="mono-inline">process.stdout.columns</span> and <span class="mono-inline">.rows</span> in real-time and switches layout strategy. On wide terminals, menu and preview are side-by-side. On narrow, they stack vertically with dynamic height clipping.</p></div>
+            </div>
+            <pre class="issue-code"><span class="cmt">// cli.js → renderMenu()</span>
+<span class="kw">const</span> cols = process.stdout.columns || <span class="num">80</span>;
+<span class="kw">const</span> rows = process.stdout.rows || <span class="num">24</span>;
+<span class="kw">const</span> isWide = cols >= <span class="num">115</span>;
+<span class="kw">const</span> useSpacing = rows >= <span class="num">25</span>;</pre>
+          </div>
+
+          <div class="issue-card reveal">
+            <div class="issue-card-head"><span class="issue-num">003</span><h4 class="issue-title">Scrollable Output Viewer</h4></div>
+            <div class="issue-grid">
+              <div class="issue-block"><span class="ib-label">WHY IT EXISTED</span><p>Detailed views (OS info, CPU cores, disk partitions) produce output far exceeding terminal height. Users needed a way to scroll through long output without losing the top.</p></div>
+              <div class="issue-block"><span class="ib-label">PROBLEM</span><p>Raw <span class="mono-inline">console.log()</span> dumps all output at once. Long outputs scroll past the visible area with no way to scroll back up, especially inside the alternate screen buffer.</p></div>
+              <div class="issue-block"><span class="ib-label">SOLUTION</span><p><span class="mono-inline">viewScrollableOutput()</span> renders a paginated window into the output lines, with arrow-key/j-k scrolling and a footer showing pagination info. It also handles terminal resize events dynamically.</p></div>
+            </div>
+            <pre class="issue-code"><span class="cmt">// cli.js → viewScrollableOutput()</span>
+<span class="kw">const</span> visibleHeight = Math.max(<span class="num">5</span>, termHeight - <span class="num">3</span>);
+<span class="kw">const</span> maxScroll = Math.max(<span class="num">0</span>, lines.length - visibleHeight);
+<span class="kw">const</span> visibleLines = lines.slice(scrollOffset, scrollOffset + visibleHeight);
+<span class="cmt">// Footer: [↑/↓ or j/k to scroll · Enter/q/Esc to return] (Lines 12–53 of 53)</span></pre>
+          </div>
+
+          <div class="issue-card reveal">
+            <div class="issue-card-head"><span class="issue-num">004</span><h4 class="issue-title">Loading Screen for Heavy Operations</h4></div>
+            <div class="issue-grid">
+              <div class="issue-block"><span class="ib-label">WHY IT EXISTED</span><p>Disk info and battery info queries invoke <span class="mono-inline">execSync()</span> calls to PowerShell/wmic/df which can take 1–5 seconds. During this time, the menu appeared frozen.</p></div>
+              <div class="issue-block"><span class="ib-label">PROBLEM</span><p>Users would see the menu freeze and assume the app crashed, especially on Windows where PowerShell startup has significant latency.</p></div>
+              <div class="issue-block"><span class="ib-label">SOLUTION</span><p>A <span class="mono-inline">renderLoadingScreen()</span> function paints a spinner box before heavy operations begin. Heavy menu items trigger this immediately on hover, while lighter items render directly.</p></div>
+            </div>
+            <pre class="issue-code"><span class="cmt">// cli.js → renderLoadingScreen()</span>
+<span class="kw">function</span> renderLoadingScreen(label) {
+  <span class="kw">const</span> frame = <span class="str">`\n  ┌────────────────────────────────────────────────────────┐\n  │   ⏳  Loading ${padVisible(label, 30)}...   │\n  │       Please wait, querying system diagnostics...     │\n  └────────────────────────────────────────────────────────┘\n`</span>;
+  process.stdout.write(<span class="str">'\x1b[H\x1b[J'</span> + frame);
+}</pre>
+          </div>
+        </div>
+
+        <!-- Category 2 -->
+        <div class="issue-category" id="cat-performance">
+          <div class="cat-header"><span class="cat-num">02</span><h3 class="cat-title">Performance & Responsiveness</h3></div>
+          
+          <div class="issue-card reveal">
+            <div class="issue-card-head"><span class="issue-num">005</span><h4 class="issue-title">Dynamic Adaptive Timeout System</h4></div>
+            <div class="issue-grid">
+              <div class="issue-block"><span class="ib-label">WHY IT EXISTED</span><p>Shell command execution (<span class="mono-inline">execSync</span>) needed timeouts to prevent hanging. Hardcoded timeouts were too short on slow Windows VMs and too long on fast Linux machines.</p></div>
+              <div class="issue-block"><span class="ib-label">PROBLEM</span><p>A 5-second timeout works on a fast Linux laptop but fires prematurely on a Windows VM where PowerShell startup takes 3+ seconds. A 30-second timeout blocks the UI for too long.</p></div>
+              <div class="issue-block"><span class="ib-label">SOLUTION</span><p><span class="mono-inline">execWithTimeout()</span> measures a baseline delay at startup by timing a trivial <span class="mono-inline">echo 1</span> command, then derives all subsequent timeouts dynamically. It also tracks per-command average execution times.</p></div>
+            </div>
+            <pre class="issue-code"><span class="cmt">// sysinfo.js → execWithTimeout()</span>
+<span class="kw">const</span> minTimeout = Math.max(<span class="num">3000</span>, baseline * <span class="num">3</span>);
+<span class="kw">const</span> maxTimeout = Math.max(<span class="num">15000</span>, baseline * <span class="num">12</span>);
+timeoutMs = Math.round(commandStats[cmdKey].avg * <span class="num">4</span> + baseline * <span class="num">2</span>);</pre>
+          </div>
+
+          <div class="issue-card reveal">
+            <div class="issue-card-head"><span class="issue-num">006</span><h4 class="issue-title">Execution Result Caching</h4></div>
+            <div class="issue-grid">
+              <div class="issue-block"><span class="ib-label">WHY IT EXISTED</span><p>The preview pane calls <span class="mono-inline">gatherSystemInfo()</span> on every keypress to show live metrics. Without caching, hovering over "OS Info" would re-execute shell commands multiple times per second.</p></div>
+              <div class="issue-block"><span class="ib-label">PROBLEM</span><p>Redundant shell executions caused CPU spikes and visible lag when navigating the menu with rapid keypresses.</p></div>
+              <div class="issue-block"><span class="ib-label">SOLUTION</span><p><span class="mono-inline">execWithTimeout()</span> caches command results with a TTL (time-to-live) of 5 seconds. Repeated calls within the window return the cached result instantly. Heavy gatherers have their own cache layers.</p></div>
+            </div>
+            <pre class="issue-code"><span class="cmt">// sysinfo.js → execWithTimeout()</span>
+<span class="kw">const</span> CACHE_TTL_MS = <span class="num">5000</span>;
+<span class="kw">if</span> (execCache[cmd] && (now - execCache[cmd].timestamp < CACHE_TTL_MS)) {
+  <span class="kw">return</span> execCache[cmd].result;
+}</pre>
+          </div>
+
+          <div class="issue-card reveal">
+            <div class="issue-card-head"><span class="issue-num">007</span><h4 class="issue-title">Input Buffer Flush After Transitions</h4></div>
+            <div class="issue-grid">
+              <div class="issue-block"><span class="ib-label">WHY IT EXISTED</span><p>When transitioning between menu → action output → menu, keystrokes pressed during the transition were buffered by stdin and replayed after the new listener registered, causing phantom navigation.</p></div>
+              <div class="issue-block"><span class="ib-label">PROBLEM</span><p>Pressing arrow keys while the loading screen was visible would cause the menu to jump 2–3 items when it finally rendered, because buffered keypresses were processed all at once.</p></div>
+              <div class="issue-block"><span class="ib-label">SOLUTION</span><p>Keypress listeners are removed before async work begins and re-registered after a 150ms delay to flush buffered inputs.</p></div>
+            </div>
+            <pre class="issue-code"><span class="cmt">// cli.js → keypressLoop()</span>
+process.stdin.removeListener(<span class="str">'keypress'</span>, onKeypress);
+<span class="cmt">// ... do work ...</span>
+setTimeout(() => {
+  process.stdin.on(<span class="str">'keypress'</span>, onKeypress);
+}, <span class="num">150</span>);</pre>
+          </div>
+
+          <div class="issue-card reveal">
+            <div class="issue-card-head"><span class="issue-num">008</span><h4 class="issue-title">Terminal Resize Reactive Redraw</h4></div>
+            <div class="issue-grid">
+              <div class="issue-block"><span class="ib-label">WHY IT EXISTED</span><p>The menu layout is responsive (side-by-side vs stacked). When users resize their terminal window, the layout needs to recompute immediately.</p></div>
+              <div class="issue-block"><span class="ib-label">PROBLEM</span><p>Without a resize handler, resizing the terminal left the menu misaligned — preview text would overflow or leave gaps until the next keypress triggered a redraw.</p></div>
+              <div class="issue-block"><span class="ib-label">SOLUTION</span><p>Both the menu loop and the scrollable viewer subscribe to <span class="mono-inline">process.stdout.on('resize')</span> and trigger a full re-render, cleaning up on exit.</p></div>
+            </div>
+            <pre class="issue-code"><span class="cmt">// cli.js → keypressLoop()</span>
+<span class="kw">const</span> onResize = () => renderMenu();
+process.stdout.on(<span class="str">'resize'</span>, onResize);
+<span class="cmt">// Cleanup on exit:</span>
+process.stdout.removeListener(<span class="str">'resize'</span>, onResize);</pre>
+          </div>
+        </div>
+
+        <!-- Category 3 -->
+        <div class="issue-category" id="cat-input">
+          <div class="cat-header"><span class="cat-num">03</span><h3 class="cat-title">Input Handling & Raw Mode Safety</h3></div>
+          
+          <div class="issue-card reveal">
+            <div class="issue-card-head"><span class="issue-num">009</span><h4 class="issue-title">Raw Mode Try/Finally Safety Net</h4></div>
+            <div class="issue-grid">
+              <div class="issue-block"><span class="ib-label">WHY IT EXISTED</span><p>The CLI enters raw mode (<span class="mono-inline">process.stdin.setRawMode(true)</span>) to capture individual keypresses. If an unhandled exception occurred, the terminal would be left in a corrupted state.</p></div>
+              <div class="issue-block"><span class="ib-label">PROBLEM</span><p>After a crash in raw mode, the user's terminal shell would not echo typed characters. Users would have to manually run <span class="mono-inline">reset</span> to fix it.</p></div>
+              <div class="issue-block"><span class="ib-label">SOLUTION</span><p>The entire interactive session is wrapped in a <span class="mono-inline">try/finally</span> block that guarantees raw mode is always restored, even if a crash occurs.</p></div>
+            </div>
+            <pre class="issue-code"><span class="cmt">// cli.js → startInteractiveMenu()</span>
+<span class="kw">try</span> {
+  process.stdout.write(<span class="str">'\x1b[?1049h\x1b[?1007l\x1b[?25l'</span>); <span class="cmt">// enter alt screen</span>
+  <span class="cmt">// ... entire session ...</span>
+} <span class="kw">finally</span> {
+  process.stdin.emit = originalEmit;
+  <span class="kw">if</span> (process.stdin.isTTY) process.stdin.setRawMode(<span class="kw">false</span>); <span class="cmt">// always restore</span>
+}</pre>
+          </div>
+
+          <div class="issue-card reveal">
+            <div class="issue-card-head"><span class="issue-num">010</span><h4 class="issue-title">Kill Readline During Keypress Mode</h4></div>
+            <div class="issue-grid">
+              <div class="issue-block"><span class="ib-label">WHY IT EXISTED</span><p>The <span class="mono-inline">readline</span> module internally listens on stdin and writes to stdout. When the app switches to raw keypress mode for arrow-key navigation, readline's internal resize handler interferes.</p></div>
+              <div class="issue-block"><span class="ib-label">PROBLEM</span><p>With readline active during keypress mode, terminal resize events would cause readline to write its prompt to stdout, corrupting the menu frame.</p></div>
+              <div class="issue-block"><span class="ib-label">SOLUTION</span><p>Any existing readline interface on stdin is explicitly closed before entering keypress mode.</p></div>
+            </div>
+            <pre class="issue-code"><span class="cmt">// cli.js → keypressLoop()</span>
+<span class="kw">if</span> (process.stdin._readlineInterface) {
+  process.stdin._readlineInterface.close();
+}
+readline.emitKeypressEvents(process.stdin);
+<span class="kw">if</span> (process.stdin.isTTY) process.stdin.setRawMode(<span class="kw">true</span>);</pre>
+          </div>
+
+          <div class="issue-card reveal">
+            <div class="issue-card-head"><span class="issue-num">011</span><h4 class="issue-title">Stdin Mouse Event Filter</h4></div>
+            <div class="issue-grid">
+              <div class="issue-block"><span class="ib-label">WHY IT EXISTED</span><p>Mouse tracking is enabled to prevent terminal emulators (especially VS Code) from translating mouse scroll events into ArrowUp/ArrowDown. However, actual mouse clicks emit escape sequences that corrupt input.</p></div>
+              <div class="issue-block"><span class="ib-label">PROBLEM</span><p>Clicking inside the terminal would inject <span class="mono-inline">\x1b[M...</span> sequences into stdin, which readline interpreted as garbage characters, breaking text input prompts.</p></div>
+              <div class="issue-block"><span class="ib-label">SOLUTION</span><p><span class="mono-inline">process.stdin.emit</span> is monkey-patched at session start to strip mouse reporting escape sequences before they reach any listener.</p></div>
+            </div>
+            <pre class="issue-code"><span class="cmt">// cli.js → startInteractiveMenu()</span>
+process.stdin.emit = <span class="kw">function</span>(event, ...args) {
+  <span class="kw">if</span> (event === <span class="str">'data'</span>) {
+    <span class="kw">let</span> data = args[<span class="num">0</span>];
+    <span class="kw">if</span> (<span class="kw">typeof</span> data === <span class="str">'string'</span>) {
+      <span class="kw">const</span> filtered = data
+        .replace(/\x1b\[M[\s\S]{<span class="num">3</span>}/g, <span class="str">''</span>)      <span class="cmt">// SGR mouse click</span>
+        .replace(/\x1b\[<[<span class="num">0</span>-<span class="num">9</span>;]+[Mm]/g, <span class="str">''</span>);   <span class="cmt">// extended mouse</span>
+      <span class="kw">if</span> (filtered.length === <span class="num">0</span>) <span class="kw">return</span>;         <span class="cmt">// swallow pure mouse events</span>
+      args[<span class="num">0</span>] = Buffer.from(filtered, <span class="str">'utf8'</span>);
+    }
+  }
+  <span class="kw">return</span> originalEmit.apply(<span class="kw">this</span>, [event, ...args]);
+};</pre>
+          </div>
+
+          <div class="issue-card reveal">
+            <div class="issue-card-head"><span class="issue-num">012</span><h4 class="issue-title">Keypress Crash Guards</h4></div>
+            <div class="issue-grid">
+              <div class="issue-block"><span class="ib-label">WHY IT EXISTED</span><p>Node.js keypress events emit a <span class="mono-inline">key</span> object, but certain terminal escape sequences (mouse clicks, terminal resize notifications, SGR sequences) emit events where <span class="mono-inline">key</span> is <span class="mono-inline">undefined</span>.</p></div>
+              <div class="issue-block"><span class="ib-label">PROBLEM</span><p>Accessing <span class="mono-inline">key.name</span> when <span class="mono-inline">key</span> is <span class="mono-inline">undefined</span> throws <span class="mono-inline">TypeError: Cannot read properties of undefined</span>, crashing the interactive menu.</p></div>
+              <div class="issue-block"><span class="ib-label">SOLUTION</span><p>Every keypress handler guards against undefined <span class="mono-inline">key</span> before accessing properties.</p></div>
+            </div>
+            <pre class="issue-code"><span class="cmt">// cli.js → onKeypress(), onScrollKeypress()</span>
+<span class="kw">if</span> (!key) <span class="kw">return</span>;  <span class="cmt">// Ignore unrecognized sequences</span>
+<span class="kw">const</span> keyName = key.name || <span class="str">''</span>;
+
+<span class="cmt">// filemanager/index.js → onKey()</span>
+<span class="kw">const</span> keyName = key ? (key.name || <span class="str">''</span>) : <span class="str">''</span>;</pre>
+          </div>
+
+          <div class="issue-card reveal">
+            <div class="issue-card-head"><span class="issue-num">013</span><h4 class="issue-title">Alternate Screen Buffer Management</h4></div>
+            <div class="issue-grid">
+              <div class="issue-block"><span class="ib-label">WHY IT EXISTED</span><p>The CLI uses the alternate screen buffer to render the menu without polluting the user's terminal scrollback history. Entering and exiting this buffer requires precise escape sequences.</p></div>
+              <div class="issue-block"><span class="ib-label">PROBLEM</span><p>If the app exited without restoring the normal screen buffer, the user's terminal would remain in the alternate buffer, making it appear blank.</p></div>
+              <div class="issue-block"><span class="ib-label">SOLUTION</span><p>Entry and exit sequences are paired, with the exit also handled in Ctrl+C and quit paths.</p></div>
+            </div>
+            <pre class="issue-code"><span class="cmt">// Entry: alternate screen + disable alt scroll + hide cursor</span>
+process.stdout.write(<span class="str">'\x1b[?1049h\x1b[?1007l\x1b[?25l'</span>);
+
+<span class="cmt">// Exit: restore alt scroll + show cursor + leave alternate screen</span>
+process.stdout.write(<span class="str">'\x1b[?1007h\x1b[?25h\x1b[?1049l'</span>);</pre>
+          </div>
+        </div>
+
+        <!-- Category 4 -->
+        <div class="issue-category" id="cat-crossplatform">
+          <div class="cat-header"><span class="cat-num">04</span><h3 class="cat-title">Cross-Platform Compatibility</h3></div>
+          
+          <div class="issue-card reveal">
+            <div class="issue-card-head"><span class="issue-num">014</span><h4 class="issue-title">Cross-Platform Command Aliases</h4></div>
+            <div class="issue-grid">
+              <div class="issue-block"><span class="ib-label">WHY IT EXISTED</span><p>Windows users expect <span class="mono-inline">dir</span>, <span class="mono-inline">del</span>, <span class="mono-inline">copy</span>. Unix users expect <span class="mono-inline">ls</span>, <span class="mono-inline">rm</span>, <span class="mono-inline">cp</span>. The file manager needed to support both audiences seamlessly.</p></div>
+              <div class="issue-block"><span class="ib-label">PROBLEM</span><p>Implementing separate code paths for each command variant would double the codebase. Additionally, Windows uses <span class="mono-inline">/flag</span> syntax while Unix uses <span class="mono-inline">-flag</span>.</p></div>
+              <div class="issue-block"><span class="ib-label">SOLUTION</span><p>A single alias map translates Windows command names to canonical Unix names, and a <span class="mono-inline">normalizeFlag()</span> function converts Windows-style flags at dispatch time. Dispatch is case-insensitive.</p></div>
+            </div>
+            <pre class="issue-code"><span class="cmt">// filemanager/index.js</span>
+<span class="kw">const</span> ALIASES = {
+  dir: <span class="str">'ls'</span>, type: <span class="str">'cat'</span>, copy: <span class="str">'cp'</span>, move: <span class="str">'mv'</span>,
+  del: <span class="str">'rm'</span>, erase: <span class="str">'rm'</span>, rd: <span class="str">'rm'</span>, rmdir: <span class="str">'rm'</span>,
+  ren: <span class="str">'mv'</span>, rename: <span class="str">'mv'</span>, md: <span class="str">'mkdir'</span>, clear: <span class="str">'cls'</span>,
+};
+
+<span class="kw">function</span> normalizeFlag(flag) {
+  <span class="kw">if</span> (flag === <span class="str">'/a'</span>) <span class="kw">return</span> <span class="str">'-a'</span>;
+  <span class="kw">if</span> (flag === <span class="str">'/s'</span>) <span class="kw">return</span> <span class="str">'-rf'</span>;
+  <span class="kw">return</span> flag;
+}</pre>
+          </div>
+
+          <div class="issue-card reveal">
+            <div class="issue-card-head"><span class="issue-num">015</span><h4 class="issue-title">File Open-in-Default-App</h4></div>
+            <div class="issue-grid">
+              <div class="issue-block"><span class="ib-label">WHY IT EXISTED</span><p>The visual directory browser lets users open files in their default application. Each OS has a different command for this.</p></div>
+              <div class="issue-block"><span class="ib-label">PROBLEM</span><p>Linux uses <span class="mono-inline">xdg-open</span>, macOS uses <span class="mono-inline">open</span>, and Windows uses <span class="mono-inline">start ""</span>. Using the wrong command silently fails or throws an error.</p></div>
+              <div class="issue-block"><span class="ib-label">SOLUTION</span><p>The browser detects file type by extension, then dispatches the correct platform-specific command.</p></div>
+            </div>
+            <pre class="issue-code"><span class="cmt">// filemanager/index.js → startVisualBrowser()</span>
+<span class="kw">let</span> command = <span class="str">''</span>;
+<span class="kw">if</span> (process.platform === <span class="str">'win32'</span>)      
+  command = <span class="str">`cmd.exe /c start "" "${fullPath}"`</span>;
+<span class="kw">else if</span> (process.platform === <span class="str">'darwin'</span>) 
+  command = <span class="str">`open "${fullPath}"`</span>;
+<span class="kw">else</span>                                    
+  command = <span class="str">`xdg-open "${fullPath}"`</span>;</pre>
+          </div>
+
+          <div class="issue-card reveal">
+            <div class="issue-card-head"><span class="issue-num">016</span><h4 class="issue-title">Platform-Aware ASCII Logos</h4></div>
+            <div class="issue-grid">
+              <div class="issue-block"><span class="ib-label">WHY IT EXISTED</span><p>The neofetch-style views display an ASCII art logo representing the host OS. Showing a Linux penguin on Windows would be confusing.</p></div>
+              <div class="issue-block"><span class="ib-label">PROBLEM</span><p>Static logos don't reflect the actual runtime platform.</p></div>
+              <div class="issue-block"><span class="ib-label">SOLUTION</span><p><span class="mono-inline">getOsLogo()</span> detects <span class="mono-inline">os.platform()</span> and returns the appropriate logo (Tux for Linux, Windows emblem for win32, Apple for darwin).</p></div>
+            </div>
+            <pre class="issue-code"><span class="cmt">// cli.js → getOsLogo()</span>
+<span class="kw">if</span> (platform === <span class="str">'win32'</span>)      { logo = [<span class="cmt">/* Windows emblem */</span>]; }
+<span class="kw">else if</span> (platform === <span class="str">'darwin'</span>) { logo = [<span class="cmt">/* Apple logo */</span>]; }
+<span class="kw">else if</span> (platform === <span class="str">'linux'</span>)   { logo = [<span class="cmt">/* Tux penguin */</span>]; }</pre>
+          </div>
+        </div>
+
+        <!-- Category 5 -->
+        <div class="issue-category" id="cat-filemanager">
+          <div class="cat-header"><span class="cat-num">05</span><h3 class="cat-title">File Manager Intelligence</h3></div>
+          
+          <div class="issue-card reveal">
+            <div class="issue-card-head"><span class="issue-num">017</span><h4 class="issue-title">Levenshtein Distance Command Suggestion</h4></div>
+            <div class="issue-grid">
+              <div class="issue-block"><span class="ib-label">WHY IT EXISTED</span><p>Users occasionally mistype commands (<span class="mono-inline">lss</span> instead of <span class="mono-inline">ls</span>). A bare "command not found" error is unhelpful when the typo is close to a valid command.</p></div>
+              <div class="issue-block"><span class="ib-label">PROBLEM</span><p>Without suggestions, users must retype the command from scratch.</p></div>
+              <div class="issue-block"><span class="ib-label">SOLUTION</span><p>When an unknown command is entered, the Levenshtein distance algorithm computes the edit distance against all known commands and suggests the closest match if within 2 edits.</p></div>
+            </div>
+            <pre class="issue-code"><span class="cmt">// filemanager/index.js → unknown command handler</span>
+<span class="kw">let</span> bestMatch = <span class="kw">null</span>;
+<span class="kw">let</span> minDistance = <span class="num">3</span>;
+<span class="kw">for</span> (<span class="kw">const</span> known <span class="kw">of</span> allCommands) {
+  <span class="kw">const</span> dist = levenshtein(rawCmd, known);
+  <span class="kw">if</span> (dist < minDistance) { minDistance = dist; bestMatch = known; }
+}
+<span class="kw">if</span> (bestMatch) console.log(color.yellow(<span class="str">`  💡 Did you mean "${bestMatch}"?`</span>));</pre>
+          </div>
+
+          <div class="issue-card reveal">
+            <div class="issue-card-head"><span class="issue-num">018</span><h4 class="issue-title">Visual Directory Browser Viewport</h4></div>
+            <div class="issue-grid">
+              <div class="issue-block"><span class="ib-label">WHY IT EXISTED</span><p>The <span class="mono-inline">ls</span> command dumps all files at once, which is unwieldy for directories with hundreds of entries. Users needed a navigable, visual file browser.</p></div>
+              <div class="issue-block"><span class="ib-label">PROBLEM</span><p>Directories with 100+ files overflow the terminal, making it impossible to see all entries without scrolling past them.</p></div>
+              <div class="issue-block"><span class="ib-label">SOLUTION</span><p><span class="mono-inline">startVisualBrowser()</span> implements an arrow-key navigable list with a scrolling viewport that only renders visible items, sorted with directories first and <span class="mono-inline">..</span> always at the top.</p></div>
+            </div>
+            <pre class="issue-code"><span class="cmt">// filemanager/index.js → startVisualBrowser() → render()</span>
+<span class="kw">const</span> visibleHeight = Math.max(<span class="num">5</span>, termHeight - <span class="num">9</span>);
+<span class="kw">let</span> start = <span class="num">0</span>;
+<span class="kw">if</span> (selectedIndex >= visibleHeight) {
+  start = selectedIndex - visibleHeight + <span class="num">1</span>;
+}
+<span class="kw">const</span> visibleItems = items.slice(start, start + visibleHeight);</pre>
+          </div>
+
+          <div class="issue-card reveal">
+            <div class="issue-card-head"><span class="issue-num">019</span><h4 class="issue-title">Quote-Aware Command Argument Parser</h4></div>
+            <div class="issue-grid">
+              <div class="issue-block"><span class="ib-label">WHY IT EXISTED</span><p>File and directory names often contain spaces (e.g., <span class="mono-inline">My Documents</span>). Naive <span class="mono-inline">split(' ')</span> breaks these paths into multiple arguments.</p></div>
+              <div class="issue-block"><span class="ib-label">PROBLEM</span><p><span class="mono-inline">cp My File.txt backup/</span> would be parsed as 4 arguments instead of 3, causing "file not found" errors.</p></div>
+              <div class="issue-block"><span class="ib-label">SOLUTION</span><p><span class="mono-inline">parseCommand()</span> implements a state-machine parser that respects both single and double quotes, and handles escaped quotes.</p></div>
+            </div>
+            <pre class="issue-code"><span class="cmt">// filemanager/index.js → parseCommand()</span>
+<span class="kw">for</span> (<span class="kw">let</span> i = <span class="num">0</span>; i < line.length; i++) {
+  <span class="kw">const</span> char = line[i];
+  <span class="kw">if</span> ((char === <span class="str">'"'</span> || char === <span class="str">"'"</span>) && (i === <span class="num">0</span> || line[i - <span class="num">1</span>] !== <span class="str">'\\'</span>)) {
+    <span class="kw">if</span> (inQuotes && char === quoteChar) { inQuotes = <span class="kw">false</span>; }
+    <span class="kw">else if</span> (!inQuotes) { inQuotes = <span class="kw">true</span>; quoteChar = char; }
+  } <span class="kw">else if</span> (char === <span class="str">' '</span> && !inQuotes) {
+    <span class="kw">if</span> (current.length > <span class="num">0</span>) { args.push(current); current = <span class="str">''</span>; }
+  } <span class="kw">else</span> { current += char; }
+}</pre>
+          </div>
+        </div>
+
+        <!-- Category 6 -->
+        <div class="issue-category" id="cat-export">
+          <div class="cat-header"><span class="cat-num">06</span><h3 class="cat-title">Data Export & Logging</h3></div>
+          
+          <div class="issue-card reveal">
+            <div class="issue-card-head"><span class="issue-num">020</span><h4 class="issue-title">Shared HTML Export Module</h4></div>
+            <div class="issue-grid">
+              <div class="issue-block"><span class="ib-label">WHY IT EXISTED</span><p>Every diagnostic view exports an HTML report. Initially, each view had its own HTML generation logic, leading to inconsistent styling and duplicated code.</p></div>
+              <div class="issue-block"><span class="ib-label">PROBLEM</span><p>5+ copies of HTML boilerplate with slightly different styles, making maintenance difficult and reports visually inconsistent.</p></div>
+              <div class="issue-block"><span class="ib-label">SOLUTION</span><p>A single <span class="mono-inline">htmlExport.js</span> module provides <span class="mono-inline">renderInfoHtml(title, dataObject)</span> which recursively renders any data object as a self-contained, dark-themed HTML page.</p></div>
+            </div>
+            <pre class="issue-code"><span class="cmt">// htmlExport.js → renderSection()</span>
+<span class="kw">function</span> renderSection(obj) {
+  <span class="kw">let</span> html = <span class="str">'&lt;dl&gt;'</span>;
+  <span class="kw">for</span> (<span class="kw">const</span> [key, value] <span class="kw">of</span> Object.entries(obj)) {
+    <span class="kw">if</span> (value && <span class="kw">typeof</span> value === <span class="str">'object'</span> && !Array.isArray(value)) {
+      html += <span class="str">`&lt;dt&gt;${label}&lt;/dt&gt;&lt;dd&gt;${renderSection(value)}&lt;/dd&gt;`</span>;
+    } <span class="kw">else</span> {
+      html += <span class="str">`&lt;dt&gt;${label}&lt;/dt&gt;&lt;dd&gt;${escapeHtml(String(value))}&lt;/dd&gt;`</span>;
+    }
+  }
+  <span class="kw">return</span> html + <span class="str">'&lt;/dl&gt;'</span>;
+}</pre>
+          </div>
+
+          <div class="issue-card reveal">
+            <div class="issue-card-head"><span class="issue-num">021</span><h4 class="issue-title">Session Changelog Persistence</h4></div>
+            <div class="issue-grid">
+              <div class="issue-block"><span class="ib-label">WHY IT EXISTED</span><p>Users needed to review what actions were performed during a session. An in-memory array is lost when the process exits.</p></div>
+              <div class="issue-block"><span class="ib-label">PROBLEM</span><p>Without persistence, there was no audit trail of session activity after closing the app.</p></div>
+              <div class="issue-block"><span class="ib-label">SOLUTION</span><p><span class="mono-inline">FileOps</span> maintains both an in-memory changelog array AND a persistent log file with a timestamped filename. Every action is dual-written.</p></div>
+            </div>
+            <pre class="issue-code"><span class="cmt">// fileOps.js → _log()</span>
+_log(action, target, detail) {
+  <span class="kw">const</span> timeStr = <span class="kw">new</span> Date().toISOString();
+  <span class="kw">this</span>.changelog.push({ action, target, detail, time: timeStr });
+
+  <span class="kw">if</span> (<span class="kw">this</span>.logFile) {
+    <span class="kw">const</span> logLine = <span class="str">`[${timeFmt}] [${action.toUpperCase().padEnd(8)}] ${target} — ${detail}\n`</span>;
+    fs.appendFileSync(<span class="kw">this</span>.logFile, logLine, <span class="str">'utf8'</span>);
+  }
+}</pre>
+          </div>
+
+          <div class="issue-card reveal">
+            <div class="issue-card-head"><span class="issue-num">022</span><h4 class="issue-title">Safe Wrapper Pattern for OS Queries</h4></div>
+            <div class="issue-grid">
+              <div class="issue-block"><span class="ib-label">WHY IT EXISTED</span><p>Querying OS-level data (<span class="mono-inline">os.cpus()</span>, <span class="mono-inline">fs.readFileSync('/sys/class/...')</span>) can throw on unsupported platforms or restricted containers.</p></div>
+              <div class="issue-block"><span class="ib-label">PROBLEM</span><p>A single unhandled exception in any metrics gatherer would crash the entire application.</p></div>
+              <div class="issue-block"><span class="ib-label">SOLUTION</span><p>Every OS query is wrapped in <span class="mono-inline">safe(fn, fallback)</span> which catches all errors and returns <span class="mono-inline">'N/A'</span> as a graceful fallback.</p></div>
+            </div>
+            <pre class="issue-code"><span class="cmt">// sysinfo.js → safe()</span>
+<span class="kw">function</span> safe(fn, fallback = <span class="str">'N/A'</span>) {
+  <span class="kw">try</span> {
+    <span class="kw">const</span> result = fn();
+    <span class="kw">return</span> result !== <span class="kw">undefined</span> && result !== <span class="kw">null</span> ? result : fallback;
+  } <span class="kw">catch</span> {
+    <span class="kw">return</span> fallback;
+  }
+}</pre>
+          </div>
+
+          <div class="issue-card reveal">
+            <div class="issue-card-head"><span class="issue-num">023</span><h4 class="issue-title">ANSI-Aware String Padding</h4></div>
+            <div class="issue-grid">
+              <div class="issue-block"><span class="ib-label">WHY IT EXISTED</span><p>Terminal colors use ANSI escape codes which add invisible characters to strings. Standard <span class="mono-inline">String.prototype.padEnd()</span> counts these invisible characters, resulting in misaligned columns.</p></div>
+              <div class="issue-block"><span class="ib-label">PROBLEM</span><p><span class="mono-inline">color.cyan('OS:').padEnd(20)</span> produces a string that looks 14 characters wide but is actually 20 characters including the ANSI codes, causing the layout to shift right.</p></div>
+              <div class="issue-block"><span class="ib-label">SOLUTION</span><p><span class="mono-inline">visibleLen()</span> strips ANSI codes before measuring, and <span class="mono-inline">padVisible()</span> adds the correct number of spaces, ensuring perfect column alignment.</p></div>
+            </div>
+            <pre class="issue-code"><span class="cmt">// cli.js</span>
+<span class="kw">function</span> visibleLen(str) {
+  <span class="kw">return</span> str.replace(/\x1b\[[<span class="num">0</span>-<span class="num">9</span>;]*m/g, <span class="str">''</span>).length;
+}
+<span class="kw">function</span> padVisible(str, width) {
+  <span class="kw">const</span> diff = width - visibleLen(str);
+  <span class="kw">return</span> diff > <span class="num">0</span> ? str + <span class="str">' '</span>.repeat(diff) : str;
+}</pre>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ============ FEATURES ============ -->
 <section id="features" class="features-section">
   <div class="container-wide">
-    <div class="section-label">[06] — FEATURES CATALOG</div>
+    <div class="section-label">[08] — FEATURES CATALOG</div>
     <h2 class="section-headline">Built for developers<br>who actually <em>use</em> the terminal.</h2>
     <p class="section-lede">Four feature categories, all cross-platform. Inspector normalises Windows CMD commands into Unix equivalents — developers can navigate seamlessly regardless of their native operating system shell.</p>
 
@@ -437,7 +872,7 @@
 <!-- ============ ERROR HANDLING ============ -->
 <section id="errors" class="errors-section">
   <div class="container-wide">
-    <div class="section-label">[07] — ERROR & SAFETY HANDLING</div>
+    <div class="section-label">[09] — ERROR & SAFETY HANDLING</div>
     <h2 class="section-headline">Defensive by default.<br>Crash-proof by design.</h2>
     <p class="section-lede">Querying low-level OS structures can throw unexpected errors on unsupported platforms or under restricted permissions. Inspector wraps every gather function in <span class="mono-inline">safe()</span> and gates every destructive file operation behind a confirm flag.</p>
 
@@ -495,6 +930,11 @@
             <span class="ft-behavior">Throws <span class="mono-inline">Not a directory</span> / <span class="mono-inline">Directory not found</span></span>
             <span class="ft-handler">fileOps.js → list()</span>
           </div>
+          <div class="ft-row">
+            <span class="ft-scenario">Windows Env Var Missing</span>
+            <span class="ft-behavior">Displays <span class="mono-inline">N/A</span> — expected on Windows, not a bug</span>
+            <span class="ft-handler">sysinfo.js → getEnvSnapshot()</span>
+          </div>
         </div>
       </div>
 
@@ -527,13 +967,47 @@
         </div>
       </div>
     </div>
+
+    <!-- SPECIAL BEHAVIOR CALLOUT -->
+    <div class="env-callout reveal">
+      <div class="env-header">
+        <span class="env-tag">[ SPECIAL BEHAVIOR ]</span>
+        <h3 class="env-title">Cross-Platform Environment Variable Behavior</h3>
+        <span class="env-sub">Windows N/A Values Are Expected</span>
+      </div>
+      <div class="env-body">
+        <p>The <span class="mono-inline">getEnvSnapshot()</span> function in <span class="mono-inline">sysinfo.js</span> reads a curated whitelist of environment variable names (<span class="mono-inline">SAFE_ENV_KEYS</span>). On Windows, several of these variables do not exist natively — the OS uses different names internally:</p>
+
+        <div class="env-table">
+          <div class="env-row env-head">
+            <span>Whitelist Variable</span>
+            <span>Linux</span>
+            <span>Windows</span>
+            <span>Reason</span>
+          </div>
+          <div class="env-row"><span class="env-var">USER</span><span class="env-lin">Set</span><span class="env-win">N/A</span><span class="env-reason">Windows uses USERNAME instead</span></div>
+          <div class="env-row"><span class="env-var">USERNAME</span><span class="env-lin">Sometimes</span><span class="env-win">Set</span><span class="env-reason">Windows-native variable</span></div>
+          <div class="env-row"><span class="env-var">HOME</span><span class="env-lin">/home/user</span><span class="env-win">C:\Users\&lt;name&gt;</span><span class="env-reason">Node.js maps via os.homedir()</span></div>
+          <div class="env-row"><span class="env-var">SHELL</span><span class="env-lin">/bin/bash</span><span class="env-win">N/A</span><span class="env-reason">Windows uses ComSpec (e.g. cmd.exe)</span></div>
+          <div class="env-row"><span class="env-var">LANG</span><span class="env-lin">en_US.UTF-8</span><span class="env-win">N/A</span><span class="env-reason">Not a Windows OS concept</span></div>
+          <div class="env-row"><span class="env-var">TERM</span><span class="env-lin">xterm-256color</span><span class="env-win">N/A</span><span class="env-reason">Windows terminals do not set this</span></div>
+          <div class="env-row"><span class="env-var">PWD</span><span class="env-lin">Current directory</span><span class="env-win">N/A</span><span class="env-reason">Windows uses CD env var instead</span></div>
+          <div class="env-row"><span class="env-var">PATH</span><span class="env-lin">Set</span><span class="env-win">Set</span><span class="env-reason">Universal across all platforms</span></div>
+          <div class="env-row"><span class="env-var">EDITOR</span><span class="env-lin">Sometimes</span><span class="env-win">Rarely set</span><span class="env-reason">Platform-dependent</span></div>
+          <div class="env-row"><span class="env-var">NODE_ENV</span><span class="env-lin">If configured</span><span class="env-win">If configured</span><span class="env-reason">Must be set manually by the user</span></div>
+        </div>
+
+        <p>This is <strong>not a bug</strong>. The code reads <span class="mono-inline">process.env[key]</span> — which is truly cross-platform — and gracefully falls back to <span class="mono-inline">'N/A'</span> when the variable does not exist on the host OS. The tool is reporting what is available, not requiring variables to exist. No platform-specific branching is needed because <span class="mono-inline">process.env</span> already returns undefined naturally on Windows for non-existent variables, and the <span class="mono-inline">safe()</span> fallback handles the rest.</p>
+        <p class="env-note">This behavior applies to all Windows environments — native installations, VirtualBox VMs, WSL (when running through cmd.exe/PowerShell), and CI runners.</p>
+      </div>
+    </div>
   </div>
 </section>
 
 <!-- ============ CODEBASE ============ -->
 <section id="codebase" class="codebase-section">
   <div class="container-wide">
-    <div class="section-label">[08] — CODEBASE MAPPING</div>
+    <div class="section-label">[10] — CODEBASE MAPPING</div>
     <h2 class="section-headline">Every file.<br>Every responsibility.</h2>
     <p class="section-lede">Hover (or tap) any flip card to reveal the responsibilities, functions, and dependencies of each source file in the Inspector codebase.</p>
 
@@ -715,7 +1189,7 @@
 <!-- ============ DOCUMENTATION ============ -->
 <section id="docs" class="docs-section">
   <div class="container">
-    <div class="section-label">[09] — DOCUMENTATION INDEX</div>
+    <div class="section-label">[11] — DOCUMENTATION INDEX</div>
     <h2 class="section-headline">The complete<br>documentation set.</h2>
     <p class="section-lede">Six modular files organized inside the <span class="mono-inline">docs/</span> folder — each one focused on a single concern.</p>
 
@@ -806,7 +1280,7 @@
 <footer id="footer" class="footer">
   <div class="footer-grid">
     <div class="footer-left">
-      <div class="fl-label">[10] — INSPECTOR</div>
+      <div class="fl-label">[12] — INSPECTOR</div>
       <h2 class="fl-headline">Modular diagnostics.<br>Sandboxed file ops.<br>Zero dependencies.</h2>
       <p class="fl-text">Built as a dev-utility package — aggregates low-level system metrics and routes them into terminal views, JSON data payloads, and styled dark-mode HTML reports.</p>
     </div>
