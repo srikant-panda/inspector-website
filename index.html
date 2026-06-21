@@ -8,9 +8,25 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800;900&display=swap">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<!-- ============ PRELOADER ============ -->
+<div id="preloader">
+  <div class="pre-content">
+    <div class="pre-logo">INSPECTOR</div>
+    <div class="pre-bar-container">
+      <div class="pre-bar" id="pre-bar"></div>
+    </div>
+    <div class="pre-status">
+      <span id="pre-log">INITIALIZING SYSTEM</span>
+      <span id="pre-percent">0%</span>
+    </div>
+    <div class="pre-subtext">v1.0 · NODE.JS CLI · ZERO-DEPENDENCY</div>
+  </div>
+</div>
+
 <div id="cursor"></div>
 
 <!-- ============ STICKY NAV ============ -->
@@ -24,7 +40,7 @@
       <li><a href="#overview" data-cursor-hover>Overview</a></li>
       <li><a href="#architecture" data-cursor-hover>Architecture</a></li>
       <li><a href="#codeflow" data-cursor-hover>Code Flow</a></li>
-      <li><a href="#streams" data-cursor-hover>Streams</a></li>
+      <li><a href="#streams" data-cursor-hover>Proofs</a></li>
       <li><a href="#features" data-cursor-hover>Features</a></li>
       <li><a href="#errors" data-cursor-hover>Error Handling</a></li>
       <li><a href="#codebase" data-cursor-hover>Codebase</a></li>
@@ -45,6 +61,12 @@
       </div>
       <h1 id="hero-title">INSPECTOR</h1>
       <p class="hero-subtitle">A modular, zero-dependency diagnostics and file management suite built for Node.js.</p>
+      <div class="hero-quickstart">
+        <span class="qs-label">// INSTALL</span>
+        <div class="qs-line"><span class="prompt">$</span> git clone https://github.com/srikant-panda/inspector.git</div>
+        <div class="qs-line"><span class="prompt">$</span> cd inspector</div>
+        <div class="qs-line"><span class="prompt">$</span> npm install <span class="term-out-dim"># zero external deps — just for safety</span></div>
+      </div>
       <div class="hero-quickstart">
         <span class="qs-label">// QUICKSTART</span>
         <div class="qs-line"><span class="prompt">$</span> npm start</div>
@@ -282,10 +304,30 @@
   </div>
 </section>
 
+<!-- ============ STREAMS & MEDIA ============ -->
+<section id="streams" class="streams-section">
+  <div class="container-wide">
+    <div class="section-label">[05] — STREAMS & MEDIA</div>
+    <h2 class="section-headline">Visual feeds.<br>Real runtime captures.</h2>
+    <p class="section-lede">Terminal sessions, architecture renders, and live file manager interactions. Thumbnails load instantly—videos and full-size images stream on demand only when clicked.</p>
+    
+    <div class="gallery-grid" id="gallery-grid">
+      <!-- Media items will be dynamically injected here by script.js -->
+    </div>
+  </div>
+</section>
+
+<!-- Lightbox Container for Full Image/Video Viewing -->
+<div id="lightbox" class="lightbox">
+  <span class="lb-close" id="lb-close">×</span>
+  <div class="lb-content" id="lb-content"></div>
+  <div class="lb-caption" id="lb-caption"></div>
+</div>
+
 <!-- ============ FEATURES ============ -->
 <section id="features" class="features-section">
   <div class="container-wide">
-    <div class="section-label">[05] — FEATURES CATALOG</div>
+    <div class="section-label">[06] — FEATURES CATALOG</div>
     <h2 class="section-headline">Built for developers<br>who actually <em>use</em> the terminal.</h2>
     <p class="section-lede">Four feature categories, all cross-platform. Inspector normalises Windows CMD commands into Unix equivalents — developers can navigate seamlessly regardless of their native operating system shell.</p>
 
@@ -395,7 +437,7 @@
 <!-- ============ ERROR HANDLING ============ -->
 <section id="errors" class="errors-section">
   <div class="container-wide">
-    <div class="section-label">[06] — ERROR & SAFETY HANDLING</div>
+    <div class="section-label">[07] — ERROR & SAFETY HANDLING</div>
     <h2 class="section-headline">Defensive by default.<br>Crash-proof by design.</h2>
     <p class="section-lede">Querying low-level OS structures can throw unexpected errors on unsupported platforms or under restricted permissions. Inspector wraps every gather function in <span class="mono-inline">safe()</span> and gates every destructive file operation behind a confirm flag.</p>
 
@@ -491,7 +533,7 @@
 <!-- ============ CODEBASE ============ -->
 <section id="codebase" class="codebase-section">
   <div class="container-wide">
-    <div class="section-label">[07] — CODEBASE MAPPING</div>
+    <div class="section-label">[08] — CODEBASE MAPPING</div>
     <h2 class="section-headline">Every file.<br>Every responsibility.</h2>
     <p class="section-lede">Hover (or tap) any flip card to reveal the responsibilities, functions, and dependencies of each source file in the Inspector codebase.</p>
 
@@ -673,7 +715,7 @@
 <!-- ============ DOCUMENTATION ============ -->
 <section id="docs" class="docs-section">
   <div class="container">
-    <div class="section-label">[08] — DOCUMENTATION INDEX</div>
+    <div class="section-label">[09] — DOCUMENTATION INDEX</div>
     <h2 class="section-headline">The complete<br>documentation set.</h2>
     <p class="section-lede">Six modular files organized inside the <span class="mono-inline">docs/</span> folder — each one focused on a single concern.</p>
 
@@ -764,7 +806,7 @@
 <footer id="footer" class="footer">
   <div class="footer-grid">
     <div class="footer-left">
-      <div class="fl-label">[09] — INSPECTOR</div>
+      <div class="fl-label">[10] — INSPECTOR</div>
       <h2 class="fl-headline">Modular diagnostics.<br>Sandboxed file ops.<br>Zero dependencies.</h2>
       <p class="fl-text">Built as a dev-utility package — aggregates low-level system metrics and routes them into terminal views, JSON data payloads, and styled dark-mode HTML reports.</p>
     </div>

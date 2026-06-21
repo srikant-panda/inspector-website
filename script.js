@@ -28,6 +28,67 @@ if (!reducedMotion) {
 }
 
 // ============================================
+// PRELOADER BOOT SEQUENCE
+// ============================================
+const preloader = document.getElementById('preloader');
+const preBar = document.getElementById('pre-bar');
+const prePercent = document.getElementById('pre-percent');
+const preLog = document.getElementById('pre-log');
+
+const BOOT_LOGS = [
+  "INITIALIZING SYSTEM",
+  "PARSING CLI ARGUMENTS",
+  "LOADING MODULES",
+  "GATHERING SYSTEM INFO",
+  "VERIFYING SANDBOX ROOT",
+  "CHECKING SAFE_ENV_KEYS",
+  "READY."
+];
+
+// Lock scroll during preload
+if (lenis) lenis.stop();
+document.body.style.overflow = 'hidden';
+
+let progress = 0;
+let logIndex = 0;
+
+preLog.textContent = BOOT_LOGS[0];
+
+const bootInterval = setInterval(() => {
+  progress += Math.random() * 15 + 5;
+  if (progress >= 100) {
+    progress = 100;
+    clearInterval(bootInterval);
+
+    preLog.textContent = BOOT_LOGS[BOOT_LOGS.length - 1];
+    prePercent.textContent = "100%";
+    preBar.style.width = "100%";
+
+    setTimeout(() => {
+      preloader.classList.add('preloader-hidden');
+
+      document.body.style.overflow = '';
+      if (lenis) lenis.start();
+
+      ScrollTrigger.refresh();
+
+      setTimeout(() => {
+        preloader.style.display = 'none';
+      }, 900);
+    }, 500);
+  } else {
+    preBar.style.width = progress + "%";
+    prePercent.textContent = Math.floor(progress) + "%";
+
+    const newIndex = Math.min(Math.floor(progress / (100 / (BOOT_LOGS.length - 1))), BOOT_LOGS.length - 2);
+    if (newIndex !== logIndex) {
+      logIndex = newIndex;
+      preLog.textContent = BOOT_LOGS[logIndex];
+    }
+  }
+}, 220);
+
+// ============================================
 // CUSTOM CURSOR
 // ============================================
 if (!isTouch) {
@@ -370,6 +431,132 @@ if (carousel) {
     carousel.scrollLeft = touchScrollLeft - walk;
   }, { passive: true });
 }
+
+// ============================================
+// STREAMS & MEDIA GALLERY
+// ============================================
+const MEDIA_LIBRARY = [
+  { 
+    type: 'video', 
+    thumb: 'https://images.unsplash.com/photo-1629654297299-c2108419f844?q=80&w=800', 
+    src: 'media/video/interactive%20cli%20menu%20wolkthrough.mp4',
+    title: 'Interactive CLI Menu Walkthrough', 
+    size: 'big' 
+  },
+  { 
+    type: 'image', 
+    thumb: 'media/images/detailed_os_info.png', 
+    src: 'media/images/detailed_os_info.png',
+    title: 'Detailed OS Diagnostics Output', 
+    size: 'tall' 
+  },
+  { 
+    type: 'image', 
+    thumb: 'media/images/main_os_info.png', 
+    src: 'media/images/main_os_info.png',
+    title: 'Main OS Information Panel', 
+    size: 'wide' 
+  },
+  { 
+    type: 'image', 
+    thumb: 'media/images/crud_terminal.png', 
+    src: 'media/images/crud_terminal.png',
+    title: 'CRUD Terminal Operations', 
+    size: 'small' 
+  },
+  { 
+    type: 'image', 
+    thumb: 'media/images/file_browse.png', 
+    src: 'media/images/file_browse.png',
+    title: 'File Browser Interface', 
+    size: 'tall' 
+  },
+];
+
+const galleryGrid = document.getElementById('gallery-grid');
+const lightbox = document.getElementById('lightbox');
+const lbContent = document.getElementById('lb-content');
+const lbCaption = document.getElementById('lb-caption');
+const lbClose = document.getElementById('lb-close');
+
+function renderGallery() {
+  if (!galleryGrid) return;
+  galleryGrid.innerHTML = '';
+
+  MEDIA_LIBRARY.forEach((item, index) => {
+    const mediaEl = document.createElement('div');
+    mediaEl.className = `media-item ${item.size || 'small'}`;
+    mediaEl.dataset.index = index;
+
+    const thumb = document.createElement('img');
+    thumb.className = 'media-thumb';
+    thumb.src = item.thumb;
+    thumb.alt = item.title;
+    thumb.loading = 'lazy';
+
+    const meta = document.createElement('div');
+    meta.className = 'media-meta';
+    meta.innerHTML = `
+      <span class="media-type-tag">${item.type.toUpperCase()}</span>
+      <div class="media-title">${item.title}</div>
+    `;
+
+    mediaEl.appendChild(thumb);
+    mediaEl.appendChild(meta);
+
+    if (item.type === 'video') {
+      const playBtn = document.createElement('div');
+      playBtn.className = 'play-overlay';
+      mediaEl.appendChild(playBtn);
+    }
+
+    mediaEl.addEventListener('click', () => openLightbox(item));
+    galleryGrid.appendChild(mediaEl);
+  });
+}
+
+function openLightbox(item) {
+  lbContent.innerHTML = '';
+  
+  if (item.type === 'image') {
+    const fullImg = document.createElement('img');
+    fullImg.src = item.src;
+    fullImg.alt = item.title;
+    lbContent.appendChild(fullImg);
+  } else if (item.type === 'video') {
+    const video = document.createElement('video');
+    video.src = item.src;
+    video.controls = true;
+    video.autoplay = true;
+    video.loop = true;
+    lbContent.appendChild(video);
+  }
+
+  lbCaption.textContent = item.title;
+  lightbox.classList.add('active');
+  document.body.style.overflow = 'hidden';
+  if (lenis) lenis.stop();
+}
+
+function closeLightbox() {
+  lightbox.classList.remove('active');
+  lbContent.innerHTML = '';
+  document.body.style.overflow = '';
+  if (lenis) lenis.start();
+}
+
+lbClose.addEventListener('click', closeLightbox);
+lightbox.addEventListener('click', (e) => {
+  if (e.target === lightbox) closeLightbox();
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && lightbox.classList.contains('active')) {
+    closeLightbox();
+  }
+});
+
+renderGallery();
 
 // ============================================
 // FLIP CARDS — keyboard accessible
