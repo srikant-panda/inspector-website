@@ -471,6 +471,13 @@ const MEDIA_LIBRARY = [
     title: 'File Browser Interface', 
     size: 'tall' 
   },
+  { 
+    type: 'video', 
+    thumb: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=800', 
+    src: 'media/video/Explanationvideo.mp4',
+    title: 'Project Explanation Walkthrough', 
+    size: 'wide' 
+  },
 ];
 
 const galleryGrid = document.getElementById('gallery-grid');
