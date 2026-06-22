@@ -339,20 +339,21 @@ document.querySelectorAll('.counter').forEach(el => {
     el.textContent = target;
     return;
   }
-  ScrollTrigger.create({
-    trigger: el,
-    start: 'top 85%',
-    once: true,
-    onEnter: () => {
-      const obj = { val: 0 };
-      gsap.to(obj, {
-        val: target,
-        duration: 1.6,
-        ease: 'power2.out',
-        onUpdate: () => { el.textContent = Math.floor(obj.val); }
-      });
-    }
-  });
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const obj = { val: 0 };
+        gsap.to(obj, {
+          val: target,
+          duration: 1.6,
+          ease: 'power2.out',
+          onUpdate: () => { el.textContent = Math.floor(obj.val); }
+        });
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -20px 0px' });
+  observer.observe(el);
 });
 
 // ============================================
@@ -438,8 +439,8 @@ if (carousel) {
 const MEDIA_LIBRARY = [
   { 
     type: 'video', 
-    thumb: 'https://images.unsplash.com/photo-1629654297299-c2108419f844?q=80&w=800', 
-    src: 'media/video/interactive%20cli%20menu%20wolkthrough.mp4',
+    thumb: 'https://pub-70dd9905db20488e9d6526ca510e0d40.r2.dev/interactive%20cli%20menu%20wolkthrough.mp4', 
+    src: 'https://pub-70dd9905db20488e9d6526ca510e0d40.r2.dev/interactive%20cli%20menu%20wolkthrough.mp4', 
     title: 'Interactive CLI Menu Walkthrough', 
     size: 'big' 
   },
@@ -447,21 +448,21 @@ const MEDIA_LIBRARY = [
     type: 'image', 
     thumb: 'media/images/detailed_os_info.png', 
     src: 'media/images/detailed_os_info.png',
-    title: 'Detailed OS Diagnostics Output', 
+    title: 'Detailed OS Information Output', 
     size: 'tall' 
   },
   { 
     type: 'image', 
     thumb: 'media/images/main_os_info.png', 
     src: 'media/images/main_os_info.png',
-    title: 'Main OS Information Panel', 
+    title: 'Main OS Info Dashboard', 
     size: 'wide' 
   },
   { 
     type: 'image', 
     thumb: 'media/images/crud_terminal.png', 
     src: 'media/images/crud_terminal.png',
-    title: 'CRUD Terminal Operations', 
+    title: 'File Manager CRUD Operations', 
     size: 'small' 
   },
   { 
@@ -469,13 +470,13 @@ const MEDIA_LIBRARY = [
     thumb: 'media/images/file_browse.png', 
     src: 'media/images/file_browse.png',
     title: 'File Browser Interface', 
-    size: 'tall' 
+    size: 'small' 
   },
   { 
     type: 'video', 
-    thumb: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=800', 
-    src: 'media/video/Explanationvideo.mp4',
-    title: 'Project Explanation Walkthrough', 
+    thumb: 'https://pub-70dd9905db20488e9d6526ca510e0d40.r2.dev/Explanationvideo_web.mp4', 
+    src: 'https://pub-70dd9905db20488e9d6526ca510e0d40.r2.dev/Explanationvideo_web.mp4',
+    title: 'Inspector Explanation Walkthrough', 
     size: 'wide' 
   },
 ];
@@ -495,28 +496,31 @@ function renderGallery() {
     mediaEl.className = `media-item ${item.size || 'small'}`;
     mediaEl.dataset.index = index;
 
+    // 1. Thumbnail (Native lazy load)
     const thumb = document.createElement('img');
     thumb.className = 'media-thumb';
     thumb.src = item.thumb;
     thumb.alt = item.title;
-    thumb.loading = 'lazy';
+    thumb.loading = 'lazy'; 
+    mediaEl.appendChild(thumb);
 
+    // 2. Meta Info
     const meta = document.createElement('div');
     meta.className = 'media-meta';
     meta.innerHTML = `
       <span class="media-type-tag">${item.type.toUpperCase()}</span>
       <div class="media-title">${item.title}</div>
     `;
-
-    mediaEl.appendChild(thumb);
     mediaEl.appendChild(meta);
 
+    // 3. Play Button overlay for Videos
     if (item.type === 'video') {
       const playBtn = document.createElement('div');
       playBtn.className = 'play-overlay';
       mediaEl.appendChild(playBtn);
     }
 
+    // 4. Click event to open Lightbox
     mediaEl.addEventListener('click', () => openLightbox(item));
     galleryGrid.appendChild(mediaEl);
   });
@@ -526,28 +530,40 @@ function openLightbox(item) {
   lbContent.innerHTML = '';
   
   if (item.type === 'image') {
+    // Standard image load
     const fullImg = document.createElement('img');
     fullImg.src = item.src;
     fullImg.alt = item.title;
     lbContent.appendChild(fullImg);
+    
   } else if (item.type === 'video') {
+    // YouTube-style lazy load: Only inject the video element when clicked.
+    // preload="metadata" ensures it only downloads the header info first, 
+    // then streams the rest when playing.
     const video = document.createElement('video');
-    video.src = item.src;
     video.controls = true;
     video.autoplay = true;
-    video.loop = true;
+    video.playsInline = true;
+    video.preload = 'metadata'; 
+    
+    const source = document.createElement('source');
+    source.src = item.src;
+    source.type = 'video/mp4'; // Ensure your videos are MP4 for maximum compatibility
+    video.appendChild(source);
+    
     lbContent.appendChild(video);
+    video.load(); // Initiate metadata load
   }
 
   lbCaption.textContent = item.title;
   lightbox.classList.add('active');
-  document.body.style.overflow = 'hidden';
+  document.body.style.overflow = 'hidden'; 
   if (lenis) lenis.stop();
 }
 
 function closeLightbox() {
   lightbox.classList.remove('active');
-  lbContent.innerHTML = '';
+  lbContent.innerHTML = ''; // Crucial: pauses and removes the video element entirely
   document.body.style.overflow = '';
   if (lenis) lenis.start();
 }
@@ -563,6 +579,7 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+// Initialize the gallery
 renderGallery();
 
 // ============================================
@@ -575,35 +592,51 @@ document.querySelectorAll('.flip-card').forEach(card => {
       card.classList.toggle('is-flipped');
     }
   });
-  // Tap to flip on touch
-  if (isTouch) {
-    card.addEventListener('click', (e) => {
-      // Prevent flip if user is scrolling - simple toggle
-      card.classList.toggle('is-flipped');
-    });
-  }
+  // Tap to flip toggle
+  card.addEventListener('click', () => {
+    card.classList.toggle('is-flipped');
+  });
 });
 
 // ============================================
-// STICKY NAV — ACTIVE SECTION HIGHLIGHT
+// MOBILE NAVIGATION & SCROLLSPY
 // ============================================
-const navLinks = document.querySelectorAll('.nav-links a');
-const sections = ['overview', 'architecture', 'codeflow', 'streams', 'features', 'errors', 'codebase', 'docs', 'footer']
-  .map(id => document.getElementById(id))
-  .filter(Boolean);
+const navToggle = document.getElementById('nav-toggle');
+const navLinks  = document.getElementById('nav-links');
+const navOverlay = document.getElementById('nav-overlay');
 
-const sectionObserver = new IntersectionObserver((entries) => {
+function closeNav() {
+  navToggle?.classList.remove('nav-toggle-active');
+  navLinks?.classList.remove('nav-active');
+  navOverlay?.classList.remove('active');
+}
+
+navToggle?.addEventListener('click', () => {
+  const isOpen = navLinks.classList.toggle('nav-active');
+  navToggle.classList.toggle('nav-toggle-active', isOpen);
+  navOverlay?.classList.toggle('active', isOpen);
+});
+
+navOverlay?.addEventListener('click', closeNav);
+navLinks?.querySelectorAll('a').forEach(link => {
+  link.addEventListener('click', closeNav);
+});
+
+// Active link highlight on scroll using IntersectionObserver
+const navSections = document.querySelectorAll('section[id]');
+const navAnchors = document.querySelectorAll('.nav-links a[href^="#"]');
+
+const navObserver = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
     if (entry.isIntersecting) {
-      const id = entry.target.id;
-      navLinks.forEach(link => {
-        link.classList.toggle('active', link.getAttribute('href') === '#' + id);
-      });
+      navAnchors.forEach(a => a.classList.remove('active'));
+      const active = document.querySelector(`.nav-links a[href="#${entry.target.id}"]`);
+      active?.classList.add('active');
     }
   });
-}, { rootMargin: '-40% 0px -55% 0px' });
+}, { threshold: 0.4 });
 
-sections.forEach(s => sectionObserver.observe(s));
+navSections.forEach(s => navObserver.observe(s));
 
 // Smooth scroll for nav links via Lenis
 document.querySelectorAll('a[href^="#"]').forEach(link => {
