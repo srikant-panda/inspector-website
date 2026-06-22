@@ -36,20 +36,31 @@
       <span class="nav-brand-dot"></span>
       INSPECTOR
     </a>
-    <ul class="nav-links">
+    
+    <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
+    <ul class="nav-links" id="nav-links">
       <li><a href="#overview" data-cursor-hover>Overview</a></li>
+      <li><a href="#installation" data-cursor-hover>Installation</a></li>
       <li><a href="#architecture" data-cursor-hover>Architecture</a></li>
       <li><a href="#codeflow" data-cursor-hover>Code Flow</a></li>
       <li><a href="#streams" data-cursor-hover>Proofs</a></li>
-      <li><a href="#issues" data-cursor-hover>Issues Solved</a></li>
+      <li><a href="#issues" data-cursor-hover>Issue Solver</a></li>
       <li><a href="#features" data-cursor-hover>Features</a></li>
       <li><a href="#errors" data-cursor-hover>Error Handling</a></li>
       <li><a href="#codebase" data-cursor-hover>Codebase</a></li>
       <li><a href="#docs" data-cursor-hover>Documentation</a></li>
+      <li class="nav-mobile-cta"><a href="https://github.com/srikant-panda/inspector" target="_blank" rel="noopener">View Source ↗</a></li>
     </ul>
+    
     <a href="https://github.com/srikant-panda/inspector" target="_blank" rel="noopener" class="nav-cta" data-cursor-hover>View Source ↗</a>
   </div>
 </nav>
+<div class="nav-overlay" id="nav-overlay"></div>
 
 <!-- ============ HERO / OVERVIEW ============ -->
 <section id="overview" class="hero">
@@ -405,7 +416,12 @@ process.stdout.write(<span class="str">'\x1b[H\x1b[J'</span> + frame);</pre>
             </div>
             <pre class="issue-code"><span class="cmt">// cli.js → renderLoadingScreen()</span>
 <span class="kw">function</span> renderLoadingScreen(label) {
-  <span class="kw">const</span> frame = <span class="str">`\n  ┌────────────────────────────────────────────────────────┐\n  │   ⏳  Loading ${padVisible(label, 30)}...   │\n  │       Please wait, querying system diagnostics...     │\n  └────────────────────────────────────────────────────────┘\n`</span>;
+  <span class="kw">const</span> frame = <span class="str">`
+  ┌────────────────────────────────────────────────────────┐
+  │   ⏳  Loading ${padVisible(label, 30)}...   │
+  │       Please wait, querying system diagnostics...     │
+  └────────────────────────────────────────────────────────┘
+`</span>;
   process.stdout.write(<span class="str">'\x1b[H\x1b[J'</span> + frame);
 }</pre>
           </div>
